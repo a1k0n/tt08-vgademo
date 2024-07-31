@@ -8,30 +8,26 @@ module vga_generator (
 );
 
     // VGA timing parameters for 640x480 @ 60Hz
-    parameter H_DISPLAY = 640;
-    parameter H_FRONT_PORCH = 16;
-    parameter H_SYNC_PULSE = 96;
-    parameter H_BACK_PORCH = 48;
+    parameter H_DISPLAY = 1220;
+    parameter H_FRONT_PORCH = 31;
+    parameter H_SYNC_PULSE = 183;
+    parameter H_BACK_PORCH = 92;
     parameter H_TOTAL = H_DISPLAY + H_FRONT_PORCH + H_SYNC_PULSE + H_BACK_PORCH;
 
     parameter V_DISPLAY = 480;
     parameter V_FRONT_PORCH = 10;
     parameter V_SYNC_PULSE = 2;
     parameter V_BACK_PORCH = 33;
-    parameter V_TOTAL = V_DISPLAY + V_FRONT_PORCH + V_SYNC_PULSE + V_BACK_PORCH;
+    parameter V_TOTAL = 525;
 
-    reg [9:0] h_count = 0;
+    // Border width
+    parameter BORDER_WIDTH = 20;
+
+    reg [10:0] h_count = 0;
     reg [9:0] v_count = 0;
 
-    // Generate 25MHz pixel clock from 48MHz input clock
-    reg [1:0] clk_divider = 0;
-    wire pixel_clk = clk_divider[0];
-    always @(posedge clk48) begin
-        clk_divider <= clk_divider + 1;
-    end
-
     // Horizontal and vertical counters
-    always @(posedge pixel_clk) begin
+    always @(posedge clk48) begin
         if (h_count == H_TOTAL - 1) begin
             h_count <= 0;
             if (v_count == V_TOTAL - 1)
@@ -47,15 +43,16 @@ module vga_generator (
     assign gpio_0 = ~((h_count >= (H_DISPLAY + H_FRONT_PORCH)) && (h_count < (H_DISPLAY + H_FRONT_PORCH + H_SYNC_PULSE)));
     assign gpio_1 = ~((v_count >= (V_DISPLAY + V_FRONT_PORCH)) && (v_count < (V_DISPLAY + V_FRONT_PORCH + V_SYNC_PULSE)));
 
-    // Generate checkerboard pattern
+    // Generate checkerboard pattern with border
     wire display_active = (h_count < H_DISPLAY) && (v_count < V_DISPLAY);
-    wire [4:0] grid_x = h_count[5:1];  // Divide horizontal count by 32
-    wire [4:0] grid_y = v_count[5:1];  // Divide vertical count by 32
-    wire checker = grid_x[0] ^ grid_y[0];
+    wire checker = h_count[7] ^ v_count[6];
+    
+    wire border = (h_count < BORDER_WIDTH) || (h_count >= H_DISPLAY - BORDER_WIDTH) ||
+                  (v_count < BORDER_WIDTH) || (v_count >= V_DISPLAY - BORDER_WIDTH);
 
     // Assign color outputs
-    assign gpio_a0 = display_active && checker; // Red
-    assign gpio_a1 = display_active && checker; // Green
-    assign gpio_a2 = display_active && checker; // Blue
+    assign gpio_a0 = display_active && (border || checker); // Red
+    assign gpio_a1 = display_active && (border || checker); // Green
+    assign gpio_a2 = display_active && (border || checker); // Blue
 
 endmodule
