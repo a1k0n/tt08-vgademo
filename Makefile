@@ -39,8 +39,11 @@ dfu: ${PROJ}.dfu
 %.json: %.v
 	yosys -p "read_verilog $<; synth_ecp5 -json $@"
 
+vga.json: vga.v rom.v serialdiv.v
+	yosys -p "read_verilog $^; synth_ecp5 -json $@"
+
 %_out.config: %.json
-	nextpnr-ecp5 --json $< --textcfg $@ $(NEXTPNR_DENSITY) --package CSFBGA285 --lpf orangecrab_${VERSION}.pcf
+	nextpnr-ecp5 --json $< --textcfg $@ $(NEXTPNR_DENSITY) --package CSFBGA285 --lpf orangecrab_${VERSION}.pcf --lpf-allow-unconstrained
 
 %.bit: %_out.config
 	ecppack --compress --freq 38.8 --input $< --bit $@
