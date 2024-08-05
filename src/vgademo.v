@@ -52,9 +52,9 @@ wire [9:0] scrolltext_height = (a_sin >>> 7) + 186 + (b_cos >>> 9);
 
 wire [2:0] chardata;
 wire [6:0] scrollv = v_count[6:0] - scrolltext_height[6:0];
-wire [8:0] scrollh = h_count[8:0] + (frame[8:0]<<3) + (frame[8:0]<<2);
+wire [9:0] scrollh = h_count + (frame<<3) + (frame<<2);
 charrom charrom (
-    .sym(scrollh[8]),
+    .sym(scrollh[9:8]),
     .xaddr(scrollh[7:3]),
     .yaddr(scrollv[6:2]),
     .data(chardata)

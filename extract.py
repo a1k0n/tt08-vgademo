@@ -1,3 +1,4 @@
+import sys
 from collections import defaultdict
 from PIL import Image
 import numpy as np
@@ -81,4 +82,8 @@ def printletter(asciicode):
         print(' '.join([str(x) for x in row]))
 
 
-printletter(ord('H'))
+letter = 'A'
+if len(sys.argv) > 1:
+    letter = sys.argv[1][0]
+
+printletter(ord(letter))
