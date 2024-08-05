@@ -6,7 +6,7 @@ module charrom (
 );
 
   wire [10:0] cxy = {sym, yaddr, xaddr};
-  reg [2:0] rom[2047:0];
+  reg [2:0] rom[0:2047];
   initial begin
     $readmemh("../data/charrom.hex", rom);
   end
@@ -21,9 +21,9 @@ module palette (
   output wire [5:0] b
 );
   
-    reg [5:0] r_table[7:0];
-    reg [5:0] g_table[7:0];
-    reg [5:0] b_table[7:0];
+    reg [5:0] r_table[0:7];
+    reg [5:0] g_table[0:7];
+    reg [5:0] b_table[0:7];
     initial begin
       $readmemh("../data/palette_r.hex", r_table);
       $readmemh("../data/palette_g.hex", g_table);
