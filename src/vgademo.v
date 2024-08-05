@@ -14,7 +14,7 @@ parameter H_DISPLAY = 1220;
 parameter H_FRONT_PORCH = 31;
 parameter H_SYNC_PULSE = 183;
 parameter H_BACK_PORCH = 92;
-parameter H_TOTAL = 1525;  // ideally 1525.322
+parameter H_TOTAL = 1525;  // ideally 1525.322; run clock at 4.7989844 MHz for better VGA timing
 
 parameter V_DISPLAY = 480;
 parameter V_FRONT_PORCH = 10;
@@ -93,6 +93,7 @@ task new_frame;
             a_scrolly <= a_scrolly + (a_sin >>> 11);
             step_sincos;
         end
+        linelfsr <= 13'h1AFA;
     end
 endtask
 
@@ -105,6 +106,7 @@ reg [17:0] plane_u;
 reg [10:0] plane_du;
 wire [9:0] plane_v = plane_du;
 wire [10:0] plane_dx;
+reg [12:0] linelfsr = 13'h1AFA;
 
 // we can compute this at the beginning of the previous line; it'll get picked
 // up at the end.
@@ -123,6 +125,8 @@ task start_of_next_line;
         // plane_v <= plane_dx;
         b_cos <= a_cos;
         b_sin <= a_sin;
+
+        linelfsr <= linelfsr&1 ? (linelfsr>>1) ^ 13'h1159 : linelfsr>>1;
     end
 endtask
 
@@ -159,13 +163,17 @@ wire [10:0] hscroll = (display_plane ? plane_u[17:9] : h_count) + a_scrollx;
 wire [9:0] vscroll = (display_plane ? plane_v[9:1] : v_count) + a_scrolly;
 wire checkerboard = hscroll[7] ^ vscroll[6];
 
+wire [10:0] starfield_x = linelfsr[12:2] + (frame<<1) + (linelfsr[1] ? frame<<2 : 0) + (linelfsr[0] ? frame<<3 : 0);
+wire star_pixel = h_count >= starfield_x && h_count < starfield_x + 3;
+wire starfield = !display_plane;
+
 wire colorbar_active = (v_count < 8) && (h_count < 128*8);
 wire colorbar2_active = !colorbar_active && (v_count < 16) && (h_count < 128*8);
 
 wire char_active = scrolltext_palidx != 0 && ((v_count >= scrolltext_height) && (v_count < scrolltext_height + 32*4));
-wire [5:0] r = char_active ? char_r : checkerboard ? hscroll[8:3] : 0;
-wire [5:0] g = char_active ? char_g : checkerboard ? vscroll[8:3] : 0;
-wire [5:0] b = char_active ? char_b : checkerboard ? vscroll[7:2] : 0;
+wire [5:0] r = char_active ? char_r : starfield ? (star_pixel ? 63 : 0) : checkerboard ? hscroll[8:3] : 0;
+wire [5:0] g = char_active ? char_g : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[8:3] : 0;
+wire [5:0] b = char_active ? char_b : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[7:2] : 0;
 
 // Bayer dithering
 // i is h_count[2:0] and j is v_count[2:0]
