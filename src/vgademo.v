@@ -52,16 +52,17 @@ wire [9:0] scrolltext_height = (a_sin >>> 7) + 186 + (b_cos >>> 9);
 
 wire [2:0] chardata;
 wire [6:0] scrollv = v_count[6:0] - scrolltext_height[6:0];
-wire [9:0] scrollh = h_count + (frame<<3) + (frame<<2);
+wire [10:0] scrollh = h_count + (frame<<3) + (frame<<2);
 charrom charrom (
     .sym(scrollh[9:8]),
     .xaddr(scrollh[7:3]),
     .yaddr(scrollv[6:2]),
     .data(chardata)
 );
+wire [2:0] scrolltext_palidx = scrollh[10] ? chardata[2:0] : 0;
 wire [5:0] char_r, char_g, char_b;
 palette palette (
-    .color(chardata[2:0]),
+    .color(scrolltext_palidx),
     .r(char_r),
     .g(char_g),
     .b(char_b)
@@ -161,7 +162,7 @@ wire checkerboard = hscroll[7] ^ vscroll[6];
 wire colorbar_active = (v_count < 8) && (h_count < 128*8);
 wire colorbar2_active = !colorbar_active && (v_count < 16) && (h_count < 128*8);
 
-wire char_active = chardata != 0 && ((v_count >= scrolltext_height) && (v_count < scrolltext_height + 32*4));
+wire char_active = scrolltext_palidx != 0 && ((v_count >= scrolltext_height) && (v_count < scrolltext_height + 32*4));
 wire [5:0] r = char_active ? char_r : checkerboard ? hscroll[8:3] : 0;
 wire [5:0] g = char_active ? char_g : checkerboard ? vscroll[8:3] : 0;
 wire [5:0] b = char_active ? char_b : checkerboard ? vscroll[7:2] : 0;
