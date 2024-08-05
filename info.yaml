@@ -17,6 +17,7 @@ project:
   # List your project's source files here. Source files must be in ./src and you must list each source file separately, one per line:
   source_files:        
     - "tt_um_a1k0n_demo.v"
+    - "vgademo.v"
     - "recip16.v"
     - "rom.v"
 

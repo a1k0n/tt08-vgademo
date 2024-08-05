@@ -1,11 +1,12 @@
-module tt_um_a1k0n_demo (
+module vgademo (
     input clk48,
-    input usr_btn,
-    output gpio_0,  // vsync
-    output gpio_1,  // hsync
-    output gpio_a0, // Blue
-    output gpio_a1, // Green
-    output gpio_a2  // Red
+    input pause_n,
+    input rst_n,
+    output vsync,  // vsync
+    output hsync,  // hsync
+    output b_out, // Blue
+    output g_out, // Green
+    output r_out  // Red
 );
 
 // VGA timing parameters for 640x480 @ 60Hz
@@ -27,8 +28,8 @@ parameter BORDER_WIDTH_Y = 20;
 
 // Generate sync signals
 wire display_active = (h_count < H_DISPLAY) && (v_count < V_DISPLAY);
-assign gpio_1 = ~((h_count >= (H_DISPLAY + H_FRONT_PORCH)) && (h_count < (H_DISPLAY + H_FRONT_PORCH + H_SYNC_PULSE)));
-assign gpio_0 = ~((v_count >= (V_DISPLAY + V_FRONT_PORCH)) && (v_count < (V_DISPLAY + V_FRONT_PORCH + V_SYNC_PULSE)));
+assign hsync = ~((h_count >= (H_DISPLAY + H_FRONT_PORCH)) && (h_count < (H_DISPLAY + H_FRONT_PORCH + H_SYNC_PULSE)));
+assign vsync = ~((v_count >= (V_DISPLAY + V_FRONT_PORCH)) && (v_count < (V_DISPLAY + V_FRONT_PORCH + V_SYNC_PULSE)));
 
 reg [10:0] frame = 0;
 reg [10:0] h_count = 0;
@@ -79,7 +80,13 @@ end
 
 task new_frame;
     begin
-        if (usr_btn) begin
+        if (~rst_n) begin
+            frame <= 0;
+            a_scrollx <= 0;
+            a_scrolly <= 0;
+            a_cos <= 16'h4000;
+            a_sin <= 16'h0000;
+        end else if (pause_n) begin
             frame <= frame + 1;
             a_scrollx <= a_scrollx + (a_cos >>> 10);
             a_scrolly <= a_scrolly + (a_sin >>> 11);
@@ -120,7 +127,10 @@ endtask
 
 // Horizontal and vertical counters
 always @(posedge clk48) begin
-    if (h_count == H_TOTAL - 1) begin
+    if (~rst_n) begin
+        h_count <= 0;
+        v_count <= 0;
+    end else if (h_count == H_TOTAL - 1) begin
         h_count <= 0;
         if (v_count == V_TOTAL - 1) begin
             v_count <= 0;
@@ -182,8 +192,8 @@ wire bdither = frame[7] ? bdither1 : bdither2;
 */
 
 // Assign color outputs
-assign gpio_a2 = display_active && rdither; // Red
-assign gpio_a1 = display_active && gdither; // Green
-assign gpio_a0 = display_active && bdither; // Blue
+assign r_out = display_active && rdither; // Red
+assign g_out = display_active && gdither; // Green
+assign b_out = display_active && bdither; // Blue
 
 endmodule

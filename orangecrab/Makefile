@@ -1,4 +1,4 @@
-PROJ=tt_um_a1k0n_demo
+PROJ=demo_orangecrab
 
 # `r0.1` or `r0.2` or `r0.2.1`
 VERSION:=r0.2
@@ -39,7 +39,7 @@ dfu: ${PROJ}.dfu
 %.json: %.v
 	yosys -p "read_verilog $<; synth_ecp5 -json $@"
 
-tt_um_a1k0n_demo.json: tt_um_a1k0n_demo.v rom.v recip16.v
+demo_orangecrab.json: demo_orangecrab.v ../src/vgademo.v ../src/rom.v ../src/recip16.v
 	yosys -p "read_verilog $^; synth_ecp5 -json $@"
 
 %_out.config: %.json
