@@ -164,8 +164,12 @@ wire [10:0] starfield_x = linelfsr[12:2] + (frame<<1) + (linelfsr[1] ? frame<<2 
 wire star_pixel = h_count >= starfield_x && h_count < starfield_x + 3;
 wire starfield = !display_plane;
 
+/*
 wire colorbar_active = (v_count < 8) && (h_count < 128*8);
 wire colorbar2_active = !colorbar_active && (v_count < 16) && (h_count < 128*8);
+*/
+parameter colorbar_active = 0;
+parameter colorbar2_active = 0;
 
 wire char_active = scrolltext_palidx != 0 && ((v_count >= scrolltext_height) && (v_count < scrolltext_height + CHARROM_HEIGHT*4));
 wire [5:0] r = char_active ? char_r : starfield ? (star_pixel ? 63 : 0) : checkerboard ? hscroll[8:3] : 0;
