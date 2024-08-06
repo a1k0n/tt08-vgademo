@@ -115,7 +115,8 @@ recip16 plane_dx_div (
 task start_of_next_line;
     begin
         plane_du <= plane_dx;
-        plane_u <= -(plane_dx * (H_DISPLAY>>1));
+        //plane_u <= -(plane_dx * (H_DISPLAY>>1));
+        plane_u <= -((plane_dx<<1) + (plane_dx<<5) + (plane_dx<<6) + (plane_dx<<9));
         // plane_v <= plane_dx;
         b_cos <= a_cos;
         b_sin <= a_sin;
