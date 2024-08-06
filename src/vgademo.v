@@ -22,6 +22,8 @@ parameter V_SYNC_PULSE = 2;
 parameter V_BACK_PORCH = 33;
 parameter V_TOTAL = 525;
 
+parameter CHARROM_HEIGHT = 28;
+
 reg [10:0] frame = 0;
 reg [10:0] h_count = 0;
 reg [9:0] v_count = 0;
@@ -50,8 +52,7 @@ wire [2:0] chardata;
 wire [6:0] scrollv = v_count[6:0] - scrolltext_height[6:0];
 wire [10:0] scrollh = h_count + (frame<<3) + (frame<<2);
 charrom charrom (
-    .sym(scrollh[9:8]),
-    .xaddr(scrollh[7:3]),
+    .xaddr(scrollh[9:3]),
     .yaddr(scrollv[6:2]),
     .data(chardata)
 );
@@ -166,7 +167,7 @@ wire starfield = !display_plane;
 wire colorbar_active = (v_count < 8) && (h_count < 128*8);
 wire colorbar2_active = !colorbar_active && (v_count < 16) && (h_count < 128*8);
 
-wire char_active = scrolltext_palidx != 0 && ((v_count >= scrolltext_height) && (v_count < scrolltext_height + 32*4));
+wire char_active = scrolltext_palidx != 0 && ((v_count >= scrolltext_height) && (v_count < scrolltext_height + CHARROM_HEIGHT*4));
 wire [5:0] r = char_active ? char_r : starfield ? (star_pixel ? 63 : 0) : checkerboard ? hscroll[8:3] : 0;
 wire [5:0] g = char_active ? char_g : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[8:3] : 0;
 wire [5:0] b = char_active ? char_b : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[7:2] : 0;

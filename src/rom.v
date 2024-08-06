@@ -1,12 +1,11 @@
 module charrom (
-  input wire [1:0] sym,
-  input wire [4:0] xaddr,
+  input wire [6:0] xaddr,
   input wire [4:0] yaddr,
   output wire [2:0] data
 );
 
-  wire [11:0] cxy = {sym, yaddr, xaddr};
-  reg [2:0] rom[0:4095];
+  wire [11:0] cxy = {yaddr, xaddr};
+  reg [2:0] rom[0:3584];
   initial begin
     $readmemh("../data/charrom.hex", rom);
   end

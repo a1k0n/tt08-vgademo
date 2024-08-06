@@ -72,18 +72,21 @@ print("Palette B:", ''.join(["%02x " % (b>>2) for r,g,b in palette]))
 def getletter(asciicode):
     x = 32*((asciicode - 32) % 10)
     y = 32*((asciicode - 32) // 10)
-    print(asciicode, x, y)
     return indices[y:y+32, x:x+32]
 
 
-def printletter(asciicode):
-    letter = getletter(asciicode)
-    for row in letter:
-        print(' '.join([str(x) for x in row]))
+def printletters(text):
+    for row in range(32-4):
+        values = []
+        for c in text:
+            asciicode = ord(c)
+            letter = getletter(asciicode)
+            values.extend(letter[row])
+        print(' '.join([str(x) for x in values]))
 
 
-letter = 'A'
+text = 'A'
 if len(sys.argv) > 1:
-    letter = sys.argv[1][0]
+    text = sys.argv[1]
 
-printletter(ord(letter))
+printletters(text)
