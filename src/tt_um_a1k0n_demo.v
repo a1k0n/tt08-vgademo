@@ -14,9 +14,9 @@ module tt_um_a1k0n_demo(
   // VGA signals
   wire hsync;
   wire vsync;
-  wire R;
-  wire G;
-  wire B;
+  wire [1:0] R;
+  wire [1:0] G;
+  wire [1:0] B;
 
   vgademo vgademo(
     .clk48(clk),
@@ -30,7 +30,7 @@ module tt_um_a1k0n_demo(
   );
 
   // TinyVGA PMOD
-  assign uo_out = {hsync, B, G, R, vsync, B, G, R};
+  assign uo_out = {hsync, B[0], G[0], R[0], vsync, B[1], G[1], R[1]};
 
   // Unused outputs assigned to 0.
   assign uio_out = 0;

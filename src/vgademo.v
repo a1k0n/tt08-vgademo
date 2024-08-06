@@ -4,9 +4,9 @@ module vgademo (
     input rst_n,
     output vsync,  // vsync
     output hsync,  // hsync
-    output b_out, // Blue
-    output g_out, // Green
-    output r_out  // Red
+    output [1:0] b_out, // Blue
+    output [1:0] g_out, // Green
+    output [1:0] r_out  // Red
 );
 
 // VGA timing parameters for 640x480 @ 60Hz
@@ -22,18 +22,14 @@ parameter V_SYNC_PULSE = 2;
 parameter V_BACK_PORCH = 33;
 parameter V_TOTAL = 525;
 
-// Border width
-parameter BORDER_WIDTH_X = 40;
-parameter BORDER_WIDTH_Y = 20;
+reg [10:0] frame = 0;
+reg [10:0] h_count = 0;
+reg [9:0] v_count = 0;
 
 // Generate sync signals
 wire display_active = (h_count < H_DISPLAY) && (v_count < V_DISPLAY);
 assign hsync = ~((h_count >= (H_DISPLAY + H_FRONT_PORCH)) && (h_count < (H_DISPLAY + H_FRONT_PORCH + H_SYNC_PULSE)));
 assign vsync = ~((v_count >= (V_DISPLAY + V_FRONT_PORCH)) && (v_count < (V_DISPLAY + V_FRONT_PORCH + V_SYNC_PULSE)));
-
-reg [10:0] frame = 0;
-reg [10:0] h_count = 0;
-reg [9:0] v_count = 0;
 
 reg signed [15:0] a_cos = 16'h4000;
 reg signed [15:0] a_sin = 16'h0000;
@@ -126,7 +122,7 @@ task start_of_next_line;
         b_cos <= a_cos;
         b_sin <= a_sin;
 
-        linelfsr <= linelfsr&1 ? (linelfsr>>1) ^ 13'h1159 : linelfsr>>1;
+        linelfsr <= linelfsr[0] ? (linelfsr>>1) ^ 13'h1159 : linelfsr>>1;
     end
 endtask
 
@@ -180,8 +176,10 @@ wire [5:0] b = char_active ? char_b : starfield ? (star_pixel ? 63 : 0) : checke
 // M(i,j) = bit_reverse(bit_interleave(i^j, i))
 // bit_interleave(i,j) = i[0]j[0]i[1]j[1]i[2]j[2]
 wire [2:0] bayer_i = h_count[2:0] ^ frame[0];
-wire [2:0] bayer_j = v_count[2:0] + frame[1];
-wire [5:0] bayer = {bayer_i[0]^bayer_j[0], bayer_i[0], bayer_i[1]^bayer_j[1], bayer_i[1], bayer_i[2]^bayer_j[2], bayer_i[2]};
+wire [2:0] bayer_j = v_count[2:0];// + frame[1];
+//wire [5:0] bayer = {bayer_i[0]^bayer_j[0], bayer_i[0], bayer_i[1]^bayer_j[1], bayer_i[1], bayer_i[2]^bayer_j[2], bayer_i[2]};
+// this is a 8x4 Bayer matrix which gets toggled every frame (so the other 8x4 elements are actually on odd frames)
+wire [4:0] bayer = {bayer_i[0], bayer_i[1]^bayer_j[1], bayer_i[1], bayer_i[2]^bayer_j[2], bayer_i[2]};
 
 // if r < lfsr[5:0] then rdither = 0 else rdither = 1
 /*
@@ -190,19 +188,22 @@ wire gdither1 = colorbar_active ? h_count[8] : g > lfsr[11:6];
 wire bdither1 = colorbar_active ? h_count[9] : b > lfsr[17:12];
 */
 
-wire rdither = colorbar2_active ? h_count[7:2] > bayer : colorbar_active ? h_count[7] : r > bayer;
-wire gdither = colorbar2_active ? h_count[8:3] > bayer : colorbar_active ? h_count[8] : g > bayer;
-wire bdither = colorbar2_active ? h_count[9:4] > bayer : colorbar_active ? h_count[9] : b > bayer;
+// output dithered 2 bit color from 6 bit color and 5 bit Bayer matrix
+function [1:0] dither2;
+    input [5:0] color6;
+    input [4:0] bayer5;
+    begin
+        dither2 = ({1'b0, color6} + {2'b0, bayer5}) >> 5;
+    end
+endfunction
 
-/*
-wire rdither = frame[7] ? rdither1 : rdither2;
-wire gdither = frame[7] ? gdither1 : gdither2;
-wire bdither = frame[7] ? bdither1 : bdither2;
-*/
+wire [1:0] rdither = colorbar2_active ? dither2(h_count[5:0], bayer) : colorbar_active ? h_count[5:4] : dither2(r, bayer);
+wire [1:0] gdither = colorbar2_active ? dither2(h_count[7:2], bayer) : colorbar_active ? h_count[7:6] : dither2(g, bayer);
+wire [1:0] bdither = colorbar2_active ? dither2(h_count[9:4], bayer) : colorbar_active ? h_count[9:8] : dither2(b, bayer);
 
 // Assign color outputs
-assign r_out = display_active && rdither; // Red
-assign g_out = display_active && gdither; // Green
-assign b_out = display_active && bdither; // Blue
+assign r_out = display_active ? rdither : 0; // Red
+assign g_out = display_active ? gdither : 0; // Green
+assign b_out = display_active ? bdither : 0; // Blue
 
 endmodule
