@@ -2,11 +2,11 @@ module vgademo (
     input clk48,
     input pause_n,
     input rst_n,
-    output vsync,  // vsync
-    output hsync,  // hsync
-    output [1:0] b_out, // Blue
-    output [1:0] g_out, // Green
-    output [1:0] r_out  // Red
+    output reg vsync,  // vsync
+    output reg hsync,  // hsync
+    output reg [1:0] b_out, // Blue
+    output reg [1:0] g_out, // Green
+    output reg [1:0] r_out  // Red
 );
 
 // VGA timing parameters for 640x480 @ 60Hz
@@ -28,10 +28,7 @@ reg [10:0] frame = 0;
 reg [10:0] h_count = 0;
 reg [9:0] v_count = 0;
 
-// Generate sync signals
 wire display_active = (h_count < H_DISPLAY) && (v_count < V_DISPLAY);
-assign hsync = ~((h_count >= (H_DISPLAY + H_FRONT_PORCH)) && (h_count < (H_DISPLAY + H_FRONT_PORCH + H_SYNC_PULSE)));
-assign vsync = ~((v_count >= (V_DISPLAY + V_FRONT_PORCH)) && (v_count < (V_DISPLAY + V_FRONT_PORCH + V_SYNC_PULSE)));
 
 reg signed [15:0] a_cos = 16'h4000;
 reg signed [15:0] a_sin = 16'h0000;
@@ -206,9 +203,14 @@ wire [1:0] rdither = colorbar2_active ? dither2(h_count[5:0], bayer) : colorbar_
 wire [1:0] gdither = colorbar2_active ? dither2(h_count[7:2], bayer) : colorbar_active ? h_count[7:6] : dither2(g, bayer);
 wire [1:0] bdither = colorbar2_active ? dither2(h_count[9:4], bayer) : colorbar_active ? h_count[9:8] : dither2(b, bayer);
 
-// Assign color outputs
-assign r_out = display_active ? rdither : 0; // Red
-assign g_out = display_active ? gdither : 0; // Green
-assign b_out = display_active ? bdither : 0; // Blue
+always @(posedge clk48) begin
+    // Generate sync signals
+    hsync <= ~((h_count >= (H_DISPLAY + H_FRONT_PORCH)) && (h_count < (H_DISPLAY + H_FRONT_PORCH + H_SYNC_PULSE)));
+    vsync <= ~((v_count >= (V_DISPLAY + V_FRONT_PORCH)) && (v_count < (V_DISPLAY + V_FRONT_PORCH + V_SYNC_PULSE)));
+    // Assign color outputs
+    r_out <= display_active ? rdither : 0; // Red
+    g_out <= display_active ? gdither : 0; // Green
+    b_out <= display_active ? bdither : 0; // Blue
+end
 
 endmodule
