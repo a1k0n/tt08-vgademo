@@ -11,6 +11,7 @@ module demo_orangecrab (
     output gpio_a5  // RedL
 );
 
+reg [1:0] poweron_reset = 3;
 wire [1:0] R, G, B;
 vgademo vgademo(
   .vsync(gpio_0),
@@ -20,8 +21,13 @@ vgademo vgademo(
   .r_out(R),
   .clk48(clk48),
   .pause_n(usr_btn),
-  .rst_n(1)
+  .rst_n(poweron_reset == 0)
 );
+
+always @(posedge clk48) begin
+  if (poweron_reset != 0)
+    poweron_reset <= poweron_reset - 1;
+end
 
 assign gpio_a0 = B[1];
 assign gpio_a1 = G[1];

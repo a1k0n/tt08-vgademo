@@ -1,11 +1,11 @@
 # Tiny Tapeout project information
 project:
-  title:        "vgademo"
+  title:        "Demo by a1k0n"
   author:       "Andy Sloane"
   discord:      "a1k0n"
-  description:  "tt08 democompo entry"
+  description:  "Tiny Tapeout demo competition entry"
   language:     "Verilog"
-  clock_hz:     47989844  # N.B. this is a slightly detuned 48MHz to more closely match the ideal VGA horizontal frequency
+  clock_hz:     48000000
 
   # How many tiles your design occupies? A single tile is about 167x108 uM.
   tiles: "1x2"          # Valid values: 1x1, 1x2, 2x2, 3x2, 4x2, 6x2 or 8x2

@@ -24,14 +24,14 @@ parameter V_TOTAL = 525;
 
 parameter CHARROM_HEIGHT = 28;
 
-reg [10:0] frame = 0;
-reg [10:0] h_count = 0;
-reg [9:0] v_count = 0;
+reg [10:0] frame;
+reg [10:0] h_count;
+reg [9:0] v_count;
 
 wire display_active = (h_count < H_DISPLAY) && (v_count < V_DISPLAY);
 
-reg signed [15:0] a_cos = 16'h4000;
-reg signed [15:0] a_sin = 16'h0000;
+reg signed [15:0] a_cos;
+reg signed [15:0] a_sin;
 reg signed [15:0] b_cos;
 reg signed [15:0] b_sin;
 wire signed [15:0] acos1 = a_cos - (a_sin >>> 6);
@@ -63,8 +63,8 @@ palette palette (
 );
 
 
-reg signed [15:0] a_scrollx = 0;
-reg signed [15:0] a_scrolly = 0;
+reg signed [15:0] a_scrollx;
+reg signed [15:0] a_scrolly;
 
 /*
 reg [17:0] lfsr = 18'h1FAF5;
@@ -75,13 +75,7 @@ end
 
 task new_frame;
     begin
-        if (~rst_n) begin
-            frame <= 0;
-            a_scrollx <= 0;
-            a_scrolly <= 0;
-            a_cos <= 16'h4000;
-            a_sin <= 16'h0000;
-        end else if (pause_n) begin
+        if (pause_n) begin
             frame <= frame + 1;
             a_scrollx <= a_scrollx + (a_cos >>> 10);
             a_scrolly <= a_scrolly + (a_sin >>> 11);
@@ -100,7 +94,7 @@ reg [17:0] plane_u;
 reg [10:0] plane_du;
 wire [9:0] plane_v = plane_du;
 wire [10:0] plane_dx;
-reg [12:0] linelfsr = 13'h1AFA;
+reg [12:0] linelfsr;
 
 // we can compute this at the beginning of the previous line; it'll get picked
 // up at the end.
@@ -130,6 +124,11 @@ always @(posedge clk48) begin
     if (~rst_n) begin
         h_count <= 0;
         v_count <= 0;
+        frame <= 0;
+        a_scrollx <= 0;
+        a_scrolly <= 0;
+        a_cos <= 16'h4000;
+        a_sin <= 16'h0000;
     end else if (h_count == H_TOTAL - 1) begin
         h_count <= 0;
         if (v_count == V_TOTAL - 1) begin
