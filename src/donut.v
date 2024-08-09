@@ -11,6 +11,11 @@ module donut (
   output reg [5:0] donut_luma
 );
 
+// copied from vgademo.v
+parameter H_DISPLAY = 1220;
+parameter H_TOTAL = 1525;
+parameter V_TOTAL = 525;
+
 parameter dz = 5;
 
 // I'm sorry, this is totally incomprehensible even to me; I have lost the derivation
@@ -113,8 +118,8 @@ always @(posedge clk) begin
     // just won't show it (most likely the monitor hasn't even synced yet)
 
   end else begin
-    if (h_count == vgademo.H_TOTAL-7) begin
-      if (v_count == vgademo.V_TOTAL-1) begin
+    if (h_count == H_TOTAL-7) begin
+      if (v_count == V_TOTAL-1) begin
         // ycA/ysA*240; 240 = 256 - 16
         ycA <= -(yincC6<<8) + (yincC6<<4);
         ysA <= -(yincS6<<8) + (yincS6<<4);
@@ -142,7 +147,7 @@ always @(posedge clk) begin
         ry6 <= ycA - xsAsB6 - (sAcB<<6);
         rz6 <= ysA + xcAsB6 + (cAcB<<6);
       end
-    end else if (h_count < 1220-8) begin
+    end else if (h_count < H_DISPLAY-8) begin
       if (h_count[2:0] == 0) begin
         // latch output registers
         donut_visible <= hit_unstable;
@@ -155,7 +160,7 @@ always @(posedge clk) begin
         rz6 <= rz6 + xincZ6;
       end
     end
-    // if h_count < 1220:
+    // if h_count < H_DISPLAY:
     //  - if h_count&7 == 0, load in new donuthit query
     // if h_count == 1220, compute next line constants
     // if v_count == 480, compute next frame constants
