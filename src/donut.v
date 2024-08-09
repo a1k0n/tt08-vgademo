@@ -18,6 +18,12 @@ parameter dz = 5;
 
 reg signed [15:0] cA, sA, cB, sB;
 reg signed [15:0] sAsB, cAsB, sAcB, cAcB;
+/*
+wire signed [30:0] sAsB = (sA * sB) >>> 14;
+wire signed [30:0] cAsB = (cA * sB) >>> 14;
+wire signed [30:0] sAcB = (sA * cB) >>> 14;
+wire signed [30:0] cAcB = (cA * cB) >>> 14;
+*/
 
 // sine/cosine rotations
 wire signed [15:0] cA1 = cA - (sA >>> 5);
@@ -34,8 +40,9 @@ wire signed [15:0] cAsB2 = cAsB1 + (cAcB2 >>> 6);
 wire signed [15:0] sAcB2 = sAcB1 - (sAsB1 >>> 6);
 wire signed [15:0] sAsB2 = sAsB1 + (sAcB2 >>> 6);
 
-reg signed [15:0] ycA, ysA;
-reg signed [15:0] rx, ry, rz;
+// these regs have 6 extra bits of precision for accumulation
+reg signed [21:0] ycA, ysA;
+reg signed [21:0] rx6, ry6, rz6;
 
 /*
 wire signed [15:0] p0x = (dz * sB) >>> 6;
@@ -43,29 +50,29 @@ wire signed [15:0] p0y = (dz * sAcB) >>> 6;
 wire signed [15:0] p0z = -(dz * cAcB) >>> 6;
 dz = 5, so just use shifts and adds here
 */
-wire signed [15:0] p0x = (sB>>>6) + (sB>>>4);
-wire signed [15:0] p0y = (sAcB>>>6) + (sAcB>>>4);
-wire signed [15:0] p0z = (-cAcB>>>6) + (-cAcB>>>4);
+wire signed [15:0] p0x = ((sB>>>2) + sB)>>>4;
+wire signed [15:0] p0y = ((sAcB>>>2) + sAcB)>>>4;
+wire signed [15:0] p0z = -((cAcB>>>2) + cAcB)>>>4;
 
-wire signed [15:0] yincC = cA >>> 8;
-wire signed [15:0] yincS = sA >>> 8;
-
-wire signed [15:0] xincX = cB >>> 6;
-wire signed [15:0] xincY = -(sAsB >>> 6);
-wire signed [15:0] xincZ = cAsB >>> 6;
+// 6 bit precision deltas
+wire signed [15:0] yincC6 = cA >>> 2;
+wire signed [15:0] yincS6 = sA >>> 2;
+wire signed [15:0] xincX6 = cB;
+wire signed [15:0] xincY6 = -sAsB;
+wire signed [15:0] xincZ6 = cAsB;
 
 /*
-wire signed [15:0] xsAsB = 76*xincY;
-wire signed [15:0] xcAsB = -76*xincZ;
+wire signed [15:0] xsAsB6 = 76*xincY6;
+wire signed [15:0] xcAsB6 = -76*xincZ6;
 */
 // 01001100 = 76
-wire signed [15:0] xsAsB = (xincY<<6) + (xincY<<3) + (xincY<<2);
-wire signed [15:0] xcAsB = -((xincZ<<6) + (xincZ<<3) + (xincZ<<2));
+wire signed [21:0] xsAsB6 = (xincY6<<6) + (xincY6<<3) + (xincY6<<2);
+wire signed [21:0] xcAsB6 = -((xincZ6<<6) + (xincZ6<<3) + (xincZ6<<2));
 
 // pre-step initial ray a bit to reduce iterations
-wire signed [15:0] px = p0x + (rx>>>5);
-wire signed [15:0] py = p0y + (ry>>>5);
-wire signed [15:0] pz = p0z + (rz>>>5);
+wire signed [15:0] px = p0x + (rx6>>>11);
+wire signed [15:0] py = p0y + (ry6>>>11);
+wire signed [15:0] pz = p0z + (rz6>>>11);
 
 wire signed [15:0] lx = sB >>> 2;
 wire signed [15:0] ly = (sAcB - cA) >>> 2;
@@ -81,9 +88,9 @@ donuthit donuthit (
   .pxin(px),
   .pyin(py),
   .pzin(pz),
-  .rxin(rx),
-  .ryin(ry),
-  .rzin(rz),
+  .rxin(rx6[21:6]),
+  .ryin(ry6[21:6]),
+  .rzin(rz6[21:6]),
   .lxin(lx),
   .lyin(ly),
   .lzin(lz),
@@ -102,29 +109,40 @@ always @(posedge clk) begin
     sAcB <= 16'h2d3f;
     cAcB <= 16'h2d3f;
 
+    // the first frame won't actually initialize the donut but that's ok, we
+    // just won't show it (most likely the monitor hasn't even synced yet)
+
   end else begin
-    if (h_count == 0 && v_count == 0) begin
-      // this is timed wrong but we want the first frame to not be garbage somehow
-      // ycA/ysA*240; 240 = 256 - 16
-      ycA <= -(yincC<<8) + (yincC<<4);
-      ysA <= -(yincS<<8) + (yincS<<4);
-      /*
-      this will be garbage on the first scanline but i don't care
-      rx <= -76*xincX - sB;
-      ry <= -yincC*240 - xsAsB - sAcB;
-      rz <= -yincS*240 + xcAsB + cAcB;
-      */
-      // also rotate cA, sA, cB, sB, cAsB, sAsB, cAcB, sAcB
-      cA <= cA1;
-      sA <= sA1;
-      cB <= cB1;
-      sB <= sB1;
-      cAsB <= cAsB2;
-      sAsB <= sAsB2;
-      cAcB <= cAcB2;
-      sAcB <= sAcB2;
-    end
-    if (h_count < 1220-8) begin
+    if (h_count == vgademo.H_TOTAL-7) begin
+      if (v_count == vgademo.V_TOTAL-1) begin
+        // ycA/ysA*240; 240 = 256 - 16
+        ycA <= -(yincC6<<8) + (yincC6<<4);
+        ysA <= -(yincS6<<8) + (yincS6<<4);
+        /*
+        this will be garbage on the first scanline but i don't care
+        rx6 <= -76*xincX6 - sB;
+        ry6 <= -yincC6*240 - xsAsB6 - sAcB;
+        rz6 <= -yincS6*240 + xcAsB6 + cAcB;
+        */
+        // also rotate cA, sA, cB, sB, cAsB, sAsB, cAcB, sAcB
+        cA <= cA1;
+        sA <= sA1;
+        cB <= cB1;
+        sB <= sB1;
+        cAsB <= cAsB2;
+        sAsB <= sAsB2;
+        cAcB <= cAcB2;
+        sAcB <= sAcB2;
+      end else begin
+        // step y
+        ycA <= ycA + yincC6;
+        ysA <= ysA + yincS6;
+        // 76 = 01001100
+        rx6 <= -((xincX6<<6) + (xincX6<<3) + (xincX6<<2)) - (sB<<6);
+        ry6 <= ycA - xsAsB6 - (sAcB<<6);
+        rz6 <= ysA + xcAsB6 + (cAcB<<6);
+      end
+    end else if (h_count < 1220-8) begin
       if (h_count[2:0] == 0) begin
         // latch output registers
         donut_visible <= hit_unstable;
@@ -132,18 +150,10 @@ always @(posedge clk) begin
         donut_luma <= {!luma_unstable[13], luma_unstable[12:8]};
       end else if (h_count[2:0] == 7) begin
         // step forward one pixel so that next clock donuthit's inputs are stable
-        rx <= rx + xincX;
-        ry <= ry + xincY;
-        rz <= rz + xincZ;
+        rx6 <= rx6 + xincX6;
+        ry6 <= ry6 + xincY6;
+        rz6 <= rz6 + xincZ6;
       end
-    end else if (h_count == vgademo.H_TOTAL-1) begin
-      // step y
-      ycA <= ycA + yincC;
-      ysA <= ysA + yincS;
-      // 76 = 01001100
-      rx <= -((xincX<<6) + (xincX<<3) + (xincX<<2)) - sB;
-      ry <= ycA - xsAsB - sAcB;
-      rz <= ysA + xcAsB + cAcB;
     end
     // if h_count < 1220:
     //  - if h_count&7 == 0, load in new donuthit query

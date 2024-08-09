@@ -28,7 +28,6 @@ reg signed [15:0] rx, ry, rz;    // ray direction
 reg signed [15:0] lx, ly, lz;    // light direction
 reg signed [15:0] t;             // distance along ray
 
-/*
 wire signed [15:0] prev_t = start ? 512 : t;
 wire signed [15:0] prev_px = start ? pxin : px;
 wire signed [15:0] prev_py = start ? pyin : py;
@@ -39,18 +38,6 @@ wire signed [15:0] prev_rz = start ? rzin : rz;
 wire signed [15:0] prev_lx = start ? lxin : lx;
 wire signed [15:0] prev_ly = start ? lyin : ly;
 wire signed [15:0] prev_lz = start ? lzin : lz;
-*/
-wire signed [15:0] prev_t = t;
-wire signed [15:0] prev_px = px;
-wire signed [15:0] prev_py = py;
-wire signed [15:0] prev_pz = pz;
-wire signed [15:0] prev_rx = rx;
-wire signed [15:0] prev_ry = ry;
-wire signed [15:0] prev_rz = rz;
-wire signed [15:0] prev_lx = lx;
-wire signed [15:0] prev_ly = ly;
-wire signed [15:0] prev_lz = lz;
-
 
 wire signed [15:0] t0;
 wire signed [15:0] t1 = t0 - r2i;
@@ -93,16 +80,13 @@ always @(posedge clk) begin
     lz <= lzin;
     t <= 512 + d;
     hit <= 1;
-    px <= pxin;
-    py <= pyin;
-    pz <= pzin;
   end else begin
-    t <= t + d;
+    t <= prev_t + d;
     hit <= hit & (prev_t < 2048);
+  end
   px <= prev_px + (px_projected[29:14]);
   py <= prev_py + (py_projected[29:14]);
   pz <= prev_pz + (pz_projected[29:14]);
-  end
   light <= step2_lz;
 end
 
