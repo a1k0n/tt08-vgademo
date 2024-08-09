@@ -177,9 +177,9 @@ donut donut(
 );
 
 // --- colorbars
+/*
 wire colorbar_active = (v_count < 8) && (h_count < 128*8);
 wire colorbar2_active = !colorbar_active && (v_count < 16) && (h_count < 128*8);
-/*
 parameter colorbar_active = 0;
 parameter colorbar2_active = 0;
 */
@@ -221,9 +221,14 @@ function [1:0] dither2;
     end
 endfunction
 
+/*
 wire [1:0] rdither = colorbar2_active ? dither2(h_count[5:0], bayer) : colorbar_active ? h_count[5:4] : dither2(r, bayer);
 wire [1:0] gdither = colorbar2_active ? dither2(h_count[7:2], bayer) : colorbar_active ? h_count[7:6] : dither2(g, bayer);
 wire [1:0] bdither = colorbar2_active ? dither2(h_count[9:4], bayer) : colorbar_active ? h_count[9:8] : dither2(b, bayer);
+*/
+wire [1:0] rdither = dither2(r, bayer);
+wire [1:0] gdither = dither2(g, bayer);
+wire [1:0] bdither = dither2(b, bayer);
 
 always @(posedge clk48) begin
     // Generate sync signals

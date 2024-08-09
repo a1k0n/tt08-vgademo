@@ -28,41 +28,32 @@ reg signed [15:0] rx, ry, rz;    // ray direction
 reg signed [15:0] lx, ly, lz;    // light direction
 reg signed [15:0] t;             // distance along ray
 
-wire signed [15:0] prev_t = start ? 512 : t;
-wire signed [15:0] prev_px = start ? pxin : px;
-wire signed [15:0] prev_py = start ? pyin : py;
-wire signed [15:0] prev_pz = start ? pzin : pz;
-wire signed [15:0] prev_rx = start ? rxin : rx;
-wire signed [15:0] prev_ry = start ? ryin : ry;
-wire signed [15:0] prev_rz = start ? rzin : rz;
-wire signed [15:0] prev_lx = start ? lxin : lx;
-wire signed [15:0] prev_ly = start ? lyin : ly;
-wire signed [15:0] prev_lz = start ? lzin : lz;
-
 wire signed [15:0] t0;
 wire signed [15:0] t1 = t0 - r2i;
 wire signed [15:0] t2;
 wire signed [15:0] step1_lx, step2_lz;
 wire signed [15:0] d = t2 - r1i;
 
-wire signed [29:0] px_projected = d * prev_rx;
-wire signed [29:0] py_projected = d * prev_ry;
-wire signed [29:0] pz_projected = d * prev_rz;
+// this multiplier is unfortunate
+wire signed [29:0] px_projected = d * rx;
+wire signed [29:0] py_projected = d * ry;
+wire signed [29:0] pz_projected = d * rz;
+
 wire _unused_ok = &{px_projected[13:0], py_projected[13:0], pz_projected[13:0]};
 
 cordic2step cordicxy (
-  .xin(prev_px),
-  .yin(prev_py),
-  .x2in(prev_lx),
-  .y2in(prev_ly),
+  .xin(px),
+  .yin(py),
+  .x2in(lx),
+  .y2in(ly),
   .length(t0),
   .x2out(step1_lx)
 );
 
 cordic2step cordicxz (
-  .xin(prev_pz),
+  .xin(pz),
   .yin(t1),
-  .x2in(prev_lz),
+  .x2in(lz),
   .y2in(step1_lx),
   .length(t2),
   .x2out(step2_lz)
@@ -78,15 +69,18 @@ always @(posedge clk) begin
     lx <= lxin;
     ly <= lyin;
     lz <= lzin;
-    t <= 512 + d;
+    px <= pxin;
+    py <= pyin;
+    pz <= pzin;
+    t <= 512;
     hit <= 1;
   end else begin
-    t <= prev_t + d;
-    hit <= hit & (prev_t < 2048);
+    t <= t + d;
+    hit <= hit & ((t+d) < 2048);
+    px <= px + (px_projected[29:14]);
+    py <= py + (py_projected[29:14]);
+    pz <= pz + (pz_projected[29:14]);
   end
-  px <= prev_px + (px_projected[29:14]);
-  py <= prev_py + (py_projected[29:14]);
-  pz <= prev_pz + (pz_projected[29:14]);
   light <= step2_lz;
 end
 
