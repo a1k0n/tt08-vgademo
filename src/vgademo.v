@@ -1,3 +1,4 @@
+(* top = 1 *)
 module vgademo (
     input clk48,
     input pause_n,
@@ -43,8 +44,9 @@ task step_sincos;
     end
 endtask
 
+// --- sine scroller
+/*
 wire [9:0] scrolltext_height = (a_sin >>> 7) + 186 + (b_cos >>> 9);
-
 wire [2:0] chardata;
 wire [6:0] scrollv = v_count[6:0] - scrolltext_height[6:0];
 wire [10:0] scrollh = h_count + (frame<<3) + (frame<<2);
@@ -61,7 +63,7 @@ palette palette (
     .g(char_g),
     .b(char_b)
 );
-
+*/
 
 reg signed [15:0] a_scrollx;
 reg signed [15:0] a_scrolly;
@@ -92,7 +94,7 @@ wire [8:0] plane_y = v_count - PLANE_Y_START + PLANE_Y_SKIPLINES;
 wire display_plane = v_count >= PLANE_Y_START;
 reg [17:0] plane_u;
 reg [10:0] plane_du;
-wire [9:0] plane_v = plane_du;
+wire [9:0] plane_v = plane_du;  // hack: the vertical component happens to be equal to the horizontal step size
 wire [10:0] plane_dx;
 reg [12:0] linelfsr;
 
@@ -111,7 +113,6 @@ task start_of_next_line;
         plane_du <= plane_dx;
         //plane_u <= -(plane_dx * (H_DISPLAY>>1));
         plane_u <= -((plane_dx<<1) + (plane_dx<<5) + (plane_dx<<6) + (plane_dx<<9));
-        // plane_v <= plane_dx;
         b_cos <= a_cos;
         b_sin <= a_sin;
 
@@ -157,21 +158,42 @@ wire [10:0] hscroll = (display_plane ? plane_u[17:9] : h_count) + a_scrollx;
 wire [9:0] vscroll = (display_plane ? plane_v[9:1] : v_count) + a_scrolly;
 wire checkerboard = hscroll[7] ^ vscroll[6];
 
+// --- starfield
+
 wire [10:0] starfield_x = linelfsr[12:2] + (frame<<1) + (linelfsr[1] ? frame<<2 : 0) + (linelfsr[0] ? frame<<3 : 0);
 wire star_pixel = h_count >= starfield_x && h_count < starfield_x + 3;
 wire starfield = !display_plane;
 
-/*
+// --- donut
+wire donut_visible;
+wire [5:0] donut_luma;
+donut donut(
+    .clk(clk48),
+    .rst_n(rst_n),
+    .h_count(h_count),
+    .v_count(v_count),
+    .donut_luma(donut_luma),
+    .donut_visible(donut_visible)
+);
+
+// --- colorbars
 wire colorbar_active = (v_count < 8) && (h_count < 128*8);
 wire colorbar2_active = !colorbar_active && (v_count < 16) && (h_count < 128*8);
-*/
+/*
 parameter colorbar_active = 0;
 parameter colorbar2_active = 0;
+*/
 
+// --- final color mux
+/*
 wire char_active = scrolltext_palidx != 0 && ((v_count >= scrolltext_height) && (v_count < scrolltext_height + CHARROM_HEIGHT*4));
-wire [5:0] r = char_active ? char_r : starfield ? (star_pixel ? 63 : 0) : checkerboard ? hscroll[8:3] : 0;
-wire [5:0] g = char_active ? char_g : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[8:3] : 0;
-wire [5:0] b = char_active ? char_b : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[7:2] : 0;
+wire [5:0] r = donut_visible ? donut_luma : char_active ? char_r : starfield ? (star_pixel ? 63 : 0) : checkerboard ? hscroll[8:3] : 0;
+wire [5:0] g = donut_visible ? 0 : char_active ? char_g : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[8:3] : 0;
+wire [5:0] b = donut_visible ? (donut_luma>>2) : char_active ? char_b : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[7:2] : 0;
+*/
+wire [5:0] r = donut_visible ? donut_luma      : starfield ? (star_pixel ? 63 : 0) : checkerboard ? hscroll[8:3] : 0;
+wire [5:0] g = donut_visible ? 0               : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[8:3] : 0;
+wire [5:0] b = donut_visible ? (donut_luma>>2) : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[7:2] : 0;
 
 // Bayer dithering
 // i is h_count[2:0] and j is v_count[2:0]

@@ -40,22 +40,55 @@ int length_cordic(int16_t x, int16_t y, int16_t *x2_, int16_t y2) {
   return (step2x >> 1) + (step2x >> 3);
 }
 
+struct testpoint {
+  int16_t x, y, x2, y2;
+};
+
 int main(int argc, char **argv) {
   Verilated::commandArgs(argc, argv);
 
   Vcordic2step *top = new Vcordic2step;
 
-  top->xin = -11583;
-  top->yin = 11583;
-  top->x2in = 0;
-  top->y2in = 16384;
+  struct testpoint tests[] = {
+      {0, 0, 0, 512},
+      {0, 16384, 0, 512},
+      {0, 16384, 512, 0},
+      {16384, 0, 0, 512},
+      {16384, 0, 512, 0},
+      {0, -16384, 0, 512},
+      {0, -16384, 512, 0},
+      {-16384, 0, 0, 512},
+      {-16384, 0, 512, 0},
+      {11583, 11583, 0, 16384},
+      {11583, 11583, 16384, 0},
+      {-11583, 11583, 0, 16384},
+      {-11583, 11583, 16384, 0},
+      {-11583, -11583, 0, 16384},
+      {-11583, -11583, 16384, 0},
+      {11583, -11583, 0, 16384},
+      {11583, -11583, 16384, 0},
+  };
 
-  top->eval();
+  for (int i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
+    top->xin = tests[i].x;
+    top->yin = tests[i].y;
+    top->x2in = tests[i].x2;
+    top->y2in = tests[i].y2;
 
-  // fetch results
-  printf("verilated length: %d x2out: %d\n", top->length, top->x2out);
+    printf("test case: x: %d y: %d x2: %d y2: %d\n", tests[i].x, tests[i].y, tests[i].x2, tests[i].y2);
 
-  int16_t x2_actual = 0, length_actual;
-  length_actual = length_cordic(-11583, 11583, &x2_actual, 16384);
-  printf("original  length: %d x2out: %d\n", length_actual, x2_actual);
+    top->eval();
+
+    int16_t length = top->length;
+    int16_t x2out = top->x2out;
+    printf("verilated length: %d x2out: %d\n", length, x2out);
+
+    int16_t x2_actual = tests[i].x2, length_actual;
+    length_actual = length_cordic(tests[i].x, tests[i].y, &x2_actual, tests[i].y2);
+    printf("original  length: %d x2out: %d\n", length_actual, x2_actual);
+    if (length != length_actual || x2out != x2_actual) {
+      printf("mismatch\n");
+      return 1;
+    }
+  }
 }

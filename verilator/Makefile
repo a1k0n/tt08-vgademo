@@ -1,12 +1,12 @@
-TARGETS = recip16 cordic2step vgademo
+TARGETS = recip16 cordic2step vgademo donuthit
 VERILATOR = verilator
-VERILATOR_FLAGS = -Wall --trace -cc --exe
+VERILATOR_FLAGS = -Wall --trace -cc --exe -I../src
 CPP = g++
 CPP_FLAGS = -std=c++11 -Wall
 
 all: $(TARGETS)
 
-vgademo: ../src/vgademo.v ../src/rom.v ../src/recip16.v vgademo_tb.cpp
+vgademo: ../src/vgademo.v ../src/recip16.v ../src/donuthit.v ../src/donut.v ../src/cordic2step.v vgademo_tb.cpp  # ../src/rom.v
 	$(VERILATOR) -Wno-widthexpand -Wno-widthtrunc --trace -cc --exe $^ -CFLAGS "-g -O3" --LDFLAGS "-lSDL2"
 	make -C obj_dir -f V$@.mk
 	cp obj_dir/V$@ $@
