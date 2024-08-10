@@ -25,8 +25,12 @@ parameter r2i = r2*256;
 
 reg signed [15:0] px, py, pz;    // origin point
 reg signed [15:0] rx, ry, rz;    // ray direction
-reg signed [15:0] lx, ly, lz;    // light direction
+wire signed [15:0] lx, ly, lz;    // light direction
 reg signed [15:0] t;             // distance along ray
+
+assign lx = lxin;
+assign ly = lyin;
+assign lz = lzin;
 
 wire signed [15:0] t0;
 wire signed [15:0] t1 = t0 - r2i;
@@ -35,11 +39,12 @@ wire signed [15:0] step1_lx, step2_lz;
 wire signed [15:0] d = t2 - r1i;
 
 // this multiplier is unfortunate
-wire signed [29:0] px_projected = d * rx;
-wire signed [29:0] py_projected = d * ry;
-wire signed [29:0] pz_projected = d * rz;
+wire signed [20:0] px_projected = $signed(d[10:0]) * $signed(rx[15:9]);
+wire signed [20:0] py_projected = $signed(d[10:0]) * $signed(ry[15:9]);
+wire signed [20:0] pz_projected = $signed(d[10:0]) * $signed(rz[15:9]);
 
-wire _unused_ok = &{px_projected[13:0], py_projected[13:0], pz_projected[13:0]};
+wire _unused_ok = &{px_projected[5:0], py_projected[5:0], pz_projected[5:0],
+rx[9:0], ry[9:0], rz[9:0]};
 
 cordic2step cordicxy (
   .xin(px),
@@ -66,9 +71,11 @@ always @(posedge clk) begin
     rx <= rxin;
     ry <= ryin;
     rz <= rzin;
+    /*
     lx <= lxin;
     ly <= lyin;
     lz <= lzin;
+    */
     px <= pxin;
     py <= pyin;
     pz <= pzin;
@@ -77,9 +84,9 @@ always @(posedge clk) begin
   end else begin
     t <= t + d;
     hit <= hit & ((t+d) < 2048);
-    px <= px + (px_projected[29:14]);
-    py <= py + (py_projected[29:14]);
-    pz <= pz + (pz_projected[29:14]);
+    px <= px + (px_projected[20:5]);
+    py <= py + (py_projected[20:5]);
+    pz <= pz + (pz_projected[20:5]);
   end
   light <= step2_lz;
 end

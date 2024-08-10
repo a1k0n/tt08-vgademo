@@ -89,7 +89,7 @@ wire hit_unstable;
 
 donuthit donuthit (
   .clk(clk),
-  .start(h_count[2:0] == 0),
+  .start(h_count[3:0] == 0),
   .pxin(px),
   .pyin(py),
   .pzin(pz),
@@ -118,7 +118,7 @@ always @(posedge clk) begin
     // just won't show it (most likely the monitor hasn't even synced yet)
 
   end else begin
-    if (h_count == H_TOTAL-7) begin
+    if (h_count == H_TOTAL-15) begin
       if (v_count == V_TOTAL-1) begin
         // ycA/ysA*240; 240 = 256 - 16
         ycA <= -(yincC6<<8) + (yincC6<<4);
@@ -148,7 +148,7 @@ always @(posedge clk) begin
         rz6 <= ysA + xcAsB6 + (cAcB<<6);
       end
     end else if (h_count < H_DISPLAY-8) begin
-      if (h_count[2:0] == 0) begin
+      if (h_count[3:0] == 0) begin
         // latch output registers
         donut_visible <= hit_unstable;
         // todo: convert from -32..31 to 0..63
