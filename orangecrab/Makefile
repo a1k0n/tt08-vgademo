@@ -39,7 +39,7 @@ dfu: ${PROJ}.dfu
 %.json: %.v
 	yosys -p "read_verilog $<; synth_ecp5 -json $@"
 
-demo_orangecrab.json: demo_orangecrab.v ../src/vgademo.v ../src/rom.v ../src/recip16.v ../src/donuthit.v ../src/cordic2opt.v ../src/donut.v
+demo_orangecrab.json: demo_orangecrab.v ../src/vgademo.v ../src/rom.v ../src/recip16.v ../src/donuthit.v ../src/cordic2step.v ../src/donut.v
 	yosys -p "read_verilog $^; synth_ecp5 -json $@"
 
 %_out.config: %.json

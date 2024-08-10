@@ -44,7 +44,7 @@ wire signed [20:0] py_projected = $signed(d[10:0]) * $signed(ry[15:9]);
 wire signed [20:0] pz_projected = $signed(d[10:0]) * $signed(rz[15:9]);
 
 wire _unused_ok = &{px_projected[5:0], py_projected[5:0], pz_projected[5:0],
-rx[9:0], ry[9:0], rz[9:0]};
+  rx[9:0], ry[9:0], rz[9:0]};
 
 cordic2step cordicxy (
   .xin(px),
