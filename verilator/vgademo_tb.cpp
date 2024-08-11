@@ -24,7 +24,6 @@ int main(int argc, char** argv) {
   Vvgademo* top = new Vvgademo;
 
   top->rst_n = 0;
-  top->pause_n = 1;
   top->clk48 = 0; top->eval(); top->clk48 = 1; top->eval();
   top->rst_n = 1;
 

@@ -25,8 +25,7 @@ module tt_um_a1k0n_demo(
     .r_out(R),
     .g_out(G),
     .b_out(B),
-    .rst_n(rst_n),
-    .pause_n(!ui_in[7])  // flip in7 on to pause demo
+    .rst_n(rst_n)
   );
 
   // TinyVGA PMOD

@@ -1,7 +1,5 @@
-(* top = 1 *)
 module vgademo (
     input clk48,
-    input pause_n,
     input rst_n,
     output reg vsync,  // vsync
     output reg hsync,  // hsync
@@ -45,7 +43,6 @@ task step_sincos;
 endtask
 
 // --- sine scroller
-/*
 wire [9:0] scrolltext_height = (a_sin >>> 7) + 186 + (b_cos >>> 9);
 wire [2:0] chardata;
 wire [6:0] scrollv = v_count[6:0] - scrolltext_height[6:0];
@@ -63,7 +60,6 @@ palette palette (
     .g(char_g),
     .b(char_b)
 );
-*/
 
 reg signed [15:0] a_scrollx;
 reg signed [15:0] a_scrolly;
@@ -77,12 +73,10 @@ end
 
 task new_frame;
     begin
-        if (pause_n) begin
-            frame <= frame + 1;
-            a_scrollx <= a_scrollx + (a_cos >>> 10);
-            a_scrolly <= a_scrolly + (a_sin >>> 11);
-            step_sincos;
-        end
+        frame <= frame + 1;
+        a_scrollx <= a_scrollx + (a_cos >>> 10);
+        a_scrolly <= a_scrolly + (a_sin >>> 11);
+        step_sincos;
         linelfsr <= 13'h1AFA;
     end
 endtask
@@ -165,6 +159,7 @@ wire star_pixel = h_count >= starfield_x && h_count < starfield_x + 3;
 wire starfield = !display_plane;
 
 // --- donut
+/*
 wire donut_visible;
 wire [5:0] donut_luma;
 donut donut(
@@ -175,6 +170,7 @@ donut donut(
     .donut_luma(donut_luma),
     .donut_visible(donut_visible)
 );
+*/
 
 // --- colorbars
 /*
@@ -185,15 +181,21 @@ parameter colorbar2_active = 0;
 */
 
 // --- final color mux
+wire scrolltext_active = scrolltext_palidx != 0 && ((v_count >= scrolltext_height) && (v_count < scrolltext_height + CHARROM_HEIGHT*4));
+wire [5:0] r = scrolltext_active ? char_r : starfield ? (star_pixel ? 63 : 0) : checkerboard ? hscroll[8:3] : 0;
+wire [5:0] g = scrolltext_active ? char_g : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[8:3] : 0;
+wire [5:0] b = scrolltext_active ? char_b : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[7:2] : 0;
 /*
-wire char_active = scrolltext_palidx != 0 && ((v_count >= scrolltext_height) && (v_count < scrolltext_height + CHARROM_HEIGHT*4));
-wire [5:0] r = donut_visible ? donut_luma : char_active ? char_r : starfield ? (star_pixel ? 63 : 0) : checkerboard ? hscroll[8:3] : 0;
-wire [5:0] g = donut_visible ? 0 : char_active ? char_g : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[8:3] : 0;
-wire [5:0] b = donut_visible ? (donut_luma>>2) : char_active ? char_b : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[7:2] : 0;
-*/
 wire [5:0] r = donut_visible ? donut_luma      : starfield ? (star_pixel ? 63 : 0) : checkerboard ? hscroll[8:3] : 0;
 wire [5:0] g = donut_visible ? 0               : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[8:3] : 0;
 wire [5:0] b = donut_visible ? (donut_luma>>2) : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[7:2] : 0;
+*/
+
+/*
+wire [5:0] r = scrolltext_active ? char_r : donut_visible ? donut_luma      : starfield ? (star_pixel ? 63 : 0) : checkerboard ? hscroll[8:3] : 0;
+wire [5:0] g = scrolltext_active ? char_g : donut_visible ? 0               : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[8:3] : 0;
+wire [5:0] b = scrolltext_active ? char_b : donut_visible ? (donut_luma>>2) : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[7:2] : 0;
+*/
 
 // Bayer dithering
 // i is h_count[2:0] and j is v_count[2:0]

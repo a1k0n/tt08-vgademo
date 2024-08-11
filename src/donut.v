@@ -16,7 +16,8 @@ parameter H_DISPLAY = 1220;
 parameter H_TOTAL = 1525;
 parameter V_TOTAL = 525;
 
-parameter dz = 5;
+// dz is hardcoded as a multiply by 5 down below
+// parameter dz = 5;
 
 // I'm sorry, this is totally incomprehensible even to me; I have lost the derivation
 // but I promise to come back and explain it

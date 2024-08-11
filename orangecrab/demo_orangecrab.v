@@ -1,6 +1,5 @@
 module demo_orangecrab (
     input clk48,
-    input usr_btn,
     output gpio_0,  // vsync
     output gpio_1,  // hsync
     output gpio_a0, // BlueH
@@ -20,7 +19,6 @@ vgademo vgademo(
   .g_out(G),
   .r_out(R),
   .clk48(clk48),
-  .pause_n(usr_btn),
   .rst_n(poweron_reset == 0)
 );
 
