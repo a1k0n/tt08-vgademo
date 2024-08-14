@@ -15,12 +15,12 @@ wire signed [15:0] snare_y1_ = snare_dry + (snare_out>>>1);
 
 reg [13:0] kick_osci;  // oscillator increment
 reg [20:0] kick_oscp;  // oscillator position
-reg signed [15:0] kick_y1;  // IIR filter state
+//reg signed [15:0] kick_y1;  // IIR filter state
 // derive triangle wave from oscillator position
 wire signed [15:0] kick_tri = (kick_oscp[20:5] ^ {16{kick_oscp[20]}}) - 16384;
 // high-pass filter the triangle for the final output
-wire signed [15:0] kick_out = kick_tri + kick_y1;
-wire signed [15:0] kick_y1_ = kick_out - (kick_out>>>8) - kick_tri;
+wire signed [15:0] kick_out = kick_tri; // + kick_y1;
+//wire signed [15:0] kick_y1_ = kick_out - (kick_out>>>8) - kick_tri;
 
 /*
 reg signed [15:0] cos, sin;
@@ -30,10 +30,10 @@ wire signed [15:0] sin1 = sin + (cos1 >>> 4);
 // clock divisor
 // first 10 bits: nominal output samplerate is 48MHz / 1024
 // next 14 bits: count out 16k samples per beat
-reg [31:0] clock_div;
+reg [25:0] clock_div;
 wire [9:0] sample_div = clock_div[9:0];
 wire [13:0] beat_div = clock_div[23:10];
-wire [7:0] beat = clock_div[31:24];
+wire [1:0] beat = clock_div[25:24];
 
 reg [15:0] sigma_delta_accum;
 // convert signed 16-bit -32768..32768 to unsigned 16-bit 0..65535
@@ -50,7 +50,7 @@ always @(posedge clk48) begin
     sigma_delta_accum <= 0;
     kick_osci <= 0;
     kick_oscp <= 0;
-    kick_y1 <= 0;
+    //kick_y1 <= 0;
     noise_lfsr <= 16'h1CAF;
     snare_env <= 0;
     snare_y1 <= 0;
@@ -63,7 +63,7 @@ always @(posedge clk48) begin
         if (beat[1:0] == 0) begin
           kick_osci <= 14'h3fff;
           kick_oscp <= 0;
-          kick_y1 <= 0;
+          // kick_y1 <= 0;
         end else if (beat[1:0] == 2) begin
           snare_env <= 16'hffff;
           snare_y1 <= 0;
@@ -72,7 +72,7 @@ always @(posedge clk48) begin
       end else begin
         kick_oscp <= kick_oscp + {7'b0, kick_osci};
         kick_osci <= kick_osci - ((kick_osci+2047) >> 11);
-        kick_y1 <= kick_y1_;
+        //kick_y1 <= kick_y1_;
 
         snare_env <= snare_env - ((snare_env+4095) >> 12);
         snare_y1 <= snare_y1_;

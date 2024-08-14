@@ -1,4 +1,4 @@
-TARGETS = recip16 cordic2step vgademo donuthit
+TARGETS = recip16 cordic2step vgademo donuthit audiotrack
 VERILATOR = verilator
 VERILATOR_FLAGS = -Wall --trace -cc --exe -I../src
 CPP = g++
@@ -10,6 +10,11 @@ vgademo: ../src/vgademo.v ../src/recip16.v ../src/donuthit.v ../src/donut.v ../s
 #vgademo: ../src/vgademo.v ../src/recip16.v ../src/donuthit.v ../src/donut.v ../src/cordic2reduce.v ../src/rom.v ../src/step3reduce.v vgademo_tb.cpp
 #vgademo: ../src/vgademo.v ../src/recip16.v ../src/rom.v vgademo_tb.cpp
 	$(VERILATOR) -Wno-widthexpand -Wno-widthtrunc --trace -cc --exe $^ -CFLAGS "-g -O3" --LDFLAGS "-lSDL2" --top-module vgademo
+	make -C obj_dir -f V$@.mk
+	cp obj_dir/V$@ $@
+
+audiotrack: ../src/audiotrack.v audiotrack_tb.cpp
+	$(VERILATOR) -Wno-widthexpand -Wno-widthtrunc --trace -cc --exe $^ -CFLAGS "-g -O3" --LDFLAGS "-lSDL2" --top-module audiotrack
 	make -C obj_dir -f V$@.mk
 	cp obj_dir/V$@ $@
 
