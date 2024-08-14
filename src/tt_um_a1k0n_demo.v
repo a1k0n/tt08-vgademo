@@ -14,6 +14,7 @@ module tt_um_a1k0n_demo(
   // VGA signals
   wire hsync;
   wire vsync;
+  wire audio;
   wire [1:0] R;
   wire [1:0] G;
   wire [1:0] B;
@@ -25,6 +26,7 @@ module tt_um_a1k0n_demo(
     .r_out(R),
     .g_out(G),
     .b_out(B),
+    .audio_out(audio),
     .rst_n(rst_n)
   );
 
@@ -32,8 +34,8 @@ module tt_um_a1k0n_demo(
   assign uo_out = {hsync, B[0], G[0], R[0], vsync, B[1], G[1], R[1]};
 
   // Unused outputs assigned to 0.
-  assign uio_out = 0;
-  assign uio_oe  = 0;
+  assign uio_out = {audio, 7'b0};
+  assign uio_oe  = {1'b1, 7'b0};
 
   // Suppress unused signals warning
   wire _unused_ok = &{ena, ui_in, uio_in};

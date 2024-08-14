@@ -5,7 +5,17 @@ module vgademo (
     output reg hsync,  // hsync
     output reg [1:0] b_out, // Blue
     output reg [1:0] g_out, // Green
-    output reg [1:0] r_out  // Red
+    output reg [1:0] r_out, // Red
+    output audio_out 
+);
+
+wire [15:0] audio_sample;
+reg [6:0] scanline_audio_sample;  // sampled on hblank, used to show oscilloscope
+audiotrack soundtrack(
+    .clk48(clk48),
+    .rst_n(rst_n),
+    .audio_sample(audio_sample),
+    .out(audio_out)
 );
 
 // VGA timing parameters for 640x480 @ 60Hz
@@ -111,6 +121,8 @@ task start_of_next_line;
         b_sin <= a_sin;
 
         linelfsr <= linelfsr[0] ? (linelfsr>>1) ^ 13'h1159 : linelfsr>>1;
+
+        scanline_audio_sample <= audio_sample[15:9];
     end
 endtask
 
@@ -180,16 +192,19 @@ parameter colorbar_active = 0;
 parameter colorbar2_active = 0;
 */
 
+// --- oscilloscope
+wire oscilloscope_active = h_count[10:1] == {3'b0, scanline_audio_sample};
+
 // --- final color mux
 wire scrolltext_active = scrolltext_palidx != 0 && ((v_count >= scrolltext_height) && (v_count < scrolltext_height + CHARROM_HEIGHT*4));
-wire [5:0] r = scrolltext_active ? char_r : starfield ? (star_pixel ? 63 : 0) : checkerboard ? hscroll[8:3] : 0;
-wire [5:0] g = scrolltext_active ? char_g : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[8:3] : 0;
-wire [5:0] b = scrolltext_active ? char_b : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[7:2] : 0;
+wire [5:0] r = oscilloscope_active ? 63 : scrolltext_active ? char_r : starfield ? (star_pixel ? 63 : 0) : checkerboard ? hscroll[8:3] : 0;
+wire [5:0] g = oscilloscope_active ? 63 : scrolltext_active ? char_g : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[8:3] : 0;
+wire [5:0] b = oscilloscope_active ? 63 : scrolltext_active ? char_b : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[7:2] : 0;
+
 /*
 wire [5:0] r = donut_visible ? donut_luma      : starfield ? (star_pixel ? 63 : 0) : checkerboard ? hscroll[8:3] : 0;
 wire [5:0] g = donut_visible ? 0               : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[8:3] : 0;
 wire [5:0] b = donut_visible ? (donut_luma>>2) : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[7:2] : 0;
-*/
 
 /*
 wire [5:0] r = scrolltext_active ? char_r : donut_visible ? donut_luma      : starfield ? (star_pixel ? 63 : 0) : checkerboard ? hscroll[8:3] : 0;

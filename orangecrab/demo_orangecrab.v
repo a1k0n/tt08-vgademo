@@ -7,7 +7,8 @@ module demo_orangecrab (
     output gpio_a2, // RedH
     output gpio_a3, // BlueL
     output gpio_a4, // GreenL
-    output gpio_a5  // RedL
+    output gpio_a5, // RedL
+    output gpio_13  // analog PWM out
 );
 
 reg [1:0] poweron_reset = 3;
@@ -18,6 +19,7 @@ vgademo vgademo(
   .b_out(B),
   .g_out(G),
   .r_out(R),
+  .audio_out(gpio_13),
   .clk48(clk48),
   .rst_n(poweron_reset == 0)
 );

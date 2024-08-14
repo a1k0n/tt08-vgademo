@@ -76,9 +76,12 @@ wire signed [21:0] xsAsB6 = (xincY6<<6) + (xincY6<<3) + (xincY6<<2);
 wire signed [21:0] xcAsB6 = -((xincZ6<<6) + (xincZ6<<3) + (xincZ6<<2));
 
 // pre-step initial ray a bit to reduce iterations
-wire signed [15:0] px = p0x + (rx6>>>11);
-wire signed [15:0] py = p0y + (ry6>>>11);
-wire signed [15:0] pz = p0z + (rz6>>>11);
+//wire signed [15:0] px = p0x + (rx6>>>11);
+//wire signed [15:0] py = p0y + (ry6>>>11);
+//wire signed [15:0] pz = p0z + (rz6>>>11);
+wire signed [15:0] px = p0x + {{6{rx6[21]}}, rx6[20:11]};
+wire signed [15:0] py = p0y + {{6{ry6[21]}}, ry6[20:11]};
+wire signed [15:0] pz = p0z + {{6{rz6[21]}}, rz6[20:11]}; 
 
 wire signed [15:0] lx = sB >>> 2;
 wire signed [15:0] ly = (sAcB - cA) >>> 2;
