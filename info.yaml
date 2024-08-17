@@ -50,7 +50,7 @@ pinout:
   uio[4]: ""
   uio[5]: ""
   uio[6]: ""
-  uio[7]: ""
+  uio[7]: "AudioPWM"
 
 # Do not change!
 yaml_version: 6

@@ -40,7 +40,7 @@ dfu: ${PROJ}.dfu
 	yosys -p "read_verilog $<; synth_ecp5 -json $@"
 
 demo_orangecrab.json: demo_orangecrab.v ../src/vgademo.v ../src/rom.v ../src/recip16.v ../src/donuthit.v ../src/cordic2step.v ../src/donut.v ../src/step3vec.v ../src/audiotrack.v
-	yosys -p "read_verilog $^; synth_ecp5 -json $@ -top demo_orangecrab"
+	yosys -p "read_verilog $^; synth_ecp5 -abc2 -json $@ -top demo_orangecrab; ltp"
 
 %_out.config: %.json
 	nextpnr-ecp5 --json $< --textcfg $@ $(NEXTPNR_DENSITY) --package CSFBGA285 --lpf orangecrab_${VERSION}.pcf --lpf-allow-unconstrained

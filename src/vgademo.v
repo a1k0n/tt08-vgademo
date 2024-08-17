@@ -127,7 +127,7 @@ task start_of_next_line;
 endtask
 
 // Horizontal and vertical counters
-always @(posedge clk48) begin
+always @(posedge clk48 or negedge rst_n) begin
     if (~rst_n) begin
         h_count <= 0;
         v_count <= 0;
@@ -136,24 +136,26 @@ always @(posedge clk48) begin
         a_scrolly <= 0;
         a_cos <= 16'h4000;
         a_sin <= 16'h0000;
-    end else if (h_count == H_TOTAL - 1) begin
-        h_count <= 0;
-        if (v_count == V_TOTAL - 1) begin
-            v_count <= 0;
-            new_frame;
-        end else
-            v_count <= v_count + 1;
     end else begin
-        h_count <= h_count + 1;
-        b_cos <= bcos1;
-        b_sin <= b_sin + (bcos1 >>> 7);
-    end
+        if (h_count == H_TOTAL - 1) begin
+            h_count <= 0;
+            if (v_count == V_TOTAL - 1) begin
+                v_count <= 0;
+                new_frame;
+            end else
+                v_count <= v_count + 1;
+        end else begin
+            h_count <= h_count + 1;
+            b_cos <= bcos1;
+            b_sin <= b_sin + (bcos1 >>> 7);
+        end
 
-    // Start of next line, plus clock cycles to account for divider to finish
-    if (h_count == H_DISPLAY)
-        start_of_next_line;
-    else if (h_count < H_DISPLAY)
-        plane_u <= plane_u + plane_du;
+        // Start of next line, plus clock cycles to account for divider to finish
+        if (h_count == H_DISPLAY)
+            start_of_next_line;
+        else if (h_count < H_DISPLAY)
+            plane_u <= plane_u + plane_du;
+    end
 end
 
 // Generate checkerboard pattern with border

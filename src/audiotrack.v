@@ -4,7 +4,7 @@ module audiotrack (
   output [15:0] audio_sample,
   output reg out);
 
-reg [15:0] noise_lfsr;
+reg [14:0] noise_lfsr;
 
 reg [15:0] snare_env;
 reg signed [15:0] snare_y1;  // IIR filter state
@@ -42,7 +42,7 @@ assign audio_sample = (snare_out + kick_out) ^ 16'h8000;
 
 wire [16:0] sigma_delta_accum_ = sigma_delta_accum + audio_sample;
 
-always @(posedge clk48) begin
+always @(posedge clk48 or negedge rst_n) begin
   if (~rst_n) begin
     //cos <= 16384;
     //sin <= 0;
@@ -51,14 +51,14 @@ always @(posedge clk48) begin
     kick_osci <= 0;
     kick_oscp <= 0;
     //kick_y1 <= 0;
-    noise_lfsr <= 16'h1CAF;
+    noise_lfsr <= 15'h1CAF;
     snare_env <= 0;
     snare_y1 <= 0;
   end else begin
     if (sample_div == 10'b0) begin
       //cos <= cos1;
       //sin <= sin1;
-      noise_lfsr <= noise_lfsr[15] ? (noise_lfsr<<1) ^ 16'h8016 : noise_lfsr<<1;
+      noise_lfsr <= {noise_lfsr[0], noise_lfsr[0] ^ noise_lfsr[14], noise_lfsr[13:1]};
       if (beat_div == 14'b0) begin
         if (beat[1:0] == 0) begin
           kick_osci <= 14'h3fff;
