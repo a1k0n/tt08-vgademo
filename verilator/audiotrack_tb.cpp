@@ -11,16 +11,15 @@ void audio_callback(void* userdata, uint8_t* stream, int len) {
   Vaudiotrack* top = (Vaudiotrack*) userdata;
 
   // Write audio samples to the stream
-  int16_t* audio_stream = (int16_t*) stream;
-  for (int i = 0; i < len / 2; i++) {
+  for (int i = 0; i < len; i++) {
     // force a new sample to be generated, rather than stepping through the
     // sigma-delta modulator
     top->rootp->audiotrack__DOT__clock_div &= ~1023;
     top->rootp->audiotrack__DOT__clock_div += 1024;
     top->clk48 = 0; top->eval(); top->clk48 = 1; top->eval();
-    audio_stream[i] = top->audio_sample;
+    stream[i] = top->audio_sample;
   }
-  samples_generated += len / 2;
+  samples_generated += len;
 }
 
 int main(int argc, char** argv) {
@@ -42,7 +41,7 @@ int main(int argc, char** argv) {
 
   SDL_AudioSpec desiredSpec, obtainedSpec;
   desiredSpec.freq = 48000;
-  desiredSpec.format = AUDIO_U16SYS;
+  desiredSpec.format = AUDIO_U8;
   desiredSpec.channels = 1;
   desiredSpec.samples = 8192;
   desiredSpec.callback = audio_callback;

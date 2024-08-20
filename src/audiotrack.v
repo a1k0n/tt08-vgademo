@@ -1,7 +1,7 @@
 module audiotrack (
   input clk48,
   input rst_n,
-  output [15:0] audio_sample,
+  output [7:0] audio_sample,
   output reg out);
 
 reg [14:0] noise_lfsr;
@@ -10,7 +10,7 @@ reg [15:0] snare_env;
 reg signed [15:0] snare_y1;  // IIR filter state
 wire [13:0] snare_x = snare_env[15:2] & noise_lfsr[13:0];
 wire signed [15:0] snare_dry = {{2{snare_x[13]}}, snare_x};
-wire signed [15:0] snare_out = snare_dry - snare_y1;
+wire signed [7:0] snare_out = (snare_dry - snare_y1) >>> 8;
 wire signed [15:0] snare_y1_ = snare_dry + (snare_out>>>1);
 
 reg [13:0] kick_osci;  // oscillator increment
@@ -19,7 +19,7 @@ reg [20:0] kick_oscp;  // oscillator position
 // derive triangle wave from oscillator position
 wire signed [15:0] kick_tri = (kick_oscp[20:5] ^ {16{kick_oscp[20]}}) - 16384;
 // high-pass filter the triangle for the final output
-wire signed [15:0] kick_out = kick_tri; // + kick_y1;
+wire signed [7:0] kick_out = kick_tri[15:8]; // + kick_y1;
 //wire signed [15:0] kick_y1_ = kick_out - (kick_out>>>8) - kick_tri;
 
 /*
@@ -35,12 +35,12 @@ wire [9:0] sample_div = clock_div[9:0];
 wire [13:0] beat_div = clock_div[23:10];
 wire [1:0] beat = clock_div[25:24];
 
-reg [15:0] sigma_delta_accum;
+reg [7:0] sigma_delta_accum;
 // convert signed 16-bit -32768..32768 to unsigned 16-bit 0..65535
 //wire [15:0] audio_sample = (snare_out + kick_out) ^ 16'h8000;
-assign audio_sample = (snare_out + kick_out) ^ 16'h8000;
+assign audio_sample = (snare_out + kick_out) ^ 8'h80;
 
-wire [16:0] sigma_delta_accum_ = sigma_delta_accum + audio_sample;
+wire [8:0] sigma_delta_accum_ = sigma_delta_accum + audio_sample;
 
 always @(posedge clk48 or negedge rst_n) begin
   if (~rst_n) begin
@@ -79,8 +79,8 @@ always @(posedge clk48 or negedge rst_n) begin
       end
     end
     clock_div <= clock_div + 1;
-    sigma_delta_accum <= sigma_delta_accum_[15:0];
-    out <= sigma_delta_accum_[16];
+    sigma_delta_accum <= sigma_delta_accum_[7:0];
+    out <= sigma_delta_accum_[8];
   end
 end
 
