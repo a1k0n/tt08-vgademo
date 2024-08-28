@@ -138,7 +138,7 @@ task step_tick;
       end
     end
   end
-endtask;
+endtask
 
 task gen_sample;
   begin
