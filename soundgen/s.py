@@ -25,12 +25,12 @@ kick = kickA + kickB + kickA + kickC + kickA + kickB + kickA + kickD
 bass_chart_notes = 'AEAAAEAACCGCECCCDDD#D#DDFCFFGDGG'
 bass_chart_octs  = '01100000000110100011010101100110'
 
-#pulsAnote ='A....AB.C.DE..G.F.....A.D..G..F.E...ECA....GABCDB....CD.B.G.G...................................................................'
+#pulsAnote = 'A....AB.C.DE..G.F.....A.D..G..F.E...ECA....GABCDB....CD.B.G.G...................................................................'
 #pulsAnote = 'A...EAB.C.DEE.G.F...A.A.D..GA.F.E...ECA....GABCDB...ECD.B.G.G...E.E.A..A..E..EEEF.F.A..AA..F..FFE.E.E..G..E..GEEE.E..G..GE..GG.G'
 #pulsAoct  = '00001000000010010011111111111111111111110100111111111111110001111110010111101121111001011110111111101011100101211110010012111102'
 #pulsAarp  = 'AAAACABBCCDECDGCFBCCC.ACDCCGCFFCECCCGCACCCCGGBCDBECCBCDBBBGGEBBBCCCCCCCCCCCCCAAACCCCCCCCCCCAxxACCCCCCCCCCCCCCCGGBBBBBBBBBGGGBBBE'
 
-#            1e+a2e+a3e+a4e+a1e+a2e+a3e+a4e+a1e+a2e+a3e+a4e+a1e+a2e+a3e+a4e+a1e+a2e+a3e+a4e+a1e+a2e+a3e+a4e+a1e+a2e+a3e+a4e+a1e+a2e+a3e+a4e+a
+#           1e+a2e+a3e+a4e+a1e+a2e+a3e+a4e+a1e+a2e+a3e+a4e+a1e+a2e+a3e+a4e+a1e+a2e+a3e+a4e+a1e+a2e+a3e+a4e+a1e+a2e+a3e+a4e+a1e+a2e+a3e+a4e+a
 pulsAnot = 'A...A.....A...A.G...G.....G...G.#...#.....#...#.F...F...G...G...'
 pulsAoct = '0000000000000000000000000000000000000000000000000000000000000000'
 pulsAarp = 'EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEAAAAAAAAAAAAAAAAAAAAAAAABBBBBBBB'
@@ -52,7 +52,7 @@ puls_chart_arp =  pulsAarp + pulsBarp + pulsAarp + pulsCarp
 #pulsAarp  ='ACCCCCCCACCCCCCCFCCCCCCCFCCCCCCCCCCCGCCCCCCCGCCCECCCBBBBGBBBBBBBCCCCCCCCCCCCCAAACCCCCCCCCCCAxxACCCCCCCCCCCCCCCGGBBBBBBBBBGGGBBBE'
 
 samples_per_tick = 256
-bpm = 120
+bpm = 140
 # samplerate = 48MHz / 1024 = 46.875kHz
 # beat rate = 48MHz/1024/512 = ~91.55Hz
 # we have four actual "sub-beats" per "beat" in terms of BPM
@@ -103,22 +103,26 @@ def dumpnotetbl(tables):
 def notehex(notelist, masktrack):
     notes = []
     mask = []
+    lastnote = 'x'
     for i in range(len(masktrack)):
         if masktrack[i] == '.':
-            notes.append('x')
+            notes.append(lastnote)
             mask.append('0')
         else:
             notes.append(str('CDEF#GAB'.index(notelist[i])))
+            lastnote = notes[-1]
             mask.append('1')
     return ' '.join(notes), ' '.join(mask)
 
 def numhex(notelist, masktrack):
     nums = []
+    lastnum = 'x'
     for i in range(len(masktrack)):
         if masktrack[i] == '.':
-            nums.append('x')
+            nums.append(lastnum)
         else:
             nums.append(str(notelist[i]))
+            lastnum = nums[-1]
     return ' '.join(nums)
 
 
