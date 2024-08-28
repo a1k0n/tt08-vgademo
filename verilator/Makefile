@@ -10,17 +10,17 @@ vgademo: ../src/vgademo.v ../src/recip16.v ../src/donuthit.v ../src/donut.v ../s
 #vgademo: ../src/vgademo.v ../src/recip16.v ../src/donuthit.v ../src/donut.v ../src/cordic2reduce.v ../src/rom.v ../src/step3reduce.v vgademo_tb.cpp
 #vgademo: ../src/vgademo.v ../src/recip16.v ../src/rom.v vgademo_tb.cpp
 	$(VERILATOR) -Wno-widthexpand -Wno-widthtrunc --trace -cc --exe $^ -CFLAGS "-g -O3" --LDFLAGS "-lSDL2" --top-module vgademo
-	make -C obj_dir -f V$@.mk
+	$(MAKE) -C obj_dir -f V$@.mk
 	cp obj_dir/V$@ $@
 
 audiotrack: ../src/audiotrack.v ../src/songrom.v audiotrack_tb.cpp
 	$(VERILATOR) -Wno-widthexpand -Wno-widthtrunc --trace -cc --exe $^ -CFLAGS "-g -O3" --LDFLAGS "-lSDL2" --top-module audiotrack
-	make -C obj_dir -f V$@.mk
+	$(MAKE) -C obj_dir -f V$@.mk
 	cp obj_dir/V$@ $@
 
 %: ../src/%.v %_tb.cpp
 	$(VERILATOR) $(VERILATOR_FLAGS) $< $*_tb.cpp
-	make -C obj_dir -f V$@.mk
+	$(MAKE) -C obj_dir -f V$@.mk
 	cp obj_dir/V$@ $@
 
 clean:

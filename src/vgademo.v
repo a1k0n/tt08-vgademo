@@ -58,14 +58,16 @@ endtask
 wire [9:0] scrolltext_height = PLANE_Y_START - 32 - CHARROM_HEIGHT*4 + (b_cos >>> 9);
 //wire [2:0] chardata;
 wire char_active_;
-wire [6:0] scrollv = v_count[6:0] - scrolltext_height[6:0];
-wire [10:0] scrollh = h_count + (frame<<3) + (frame<<2);
+wire [6:0] scrollv = (display_plane ? plane_v[8:2] : v_count[6:0]) - scrolltext_height[6:0];
+wire [10:0] scrollh = (display_plane ? plane_u[20:10] : h_count - 610) + (frame<<3) + (frame<<2);
 charmask charmask (
     .xaddr(scrollh[9:3]),
     .yaddr(scrollv[6:2]),
     .data(char_active_)
 );
 wire char_active = scrollh[10] & char_active_;
+wire scrolltext_active = char_active && ((v_count >= scrolltext_height) && (v_count < scrolltext_height + CHARROM_HEIGHT*4));
+wire shadow_active = char_active && ((plane_v[9:2] >= scrolltext_height) && (plane_v[9:2] < scrolltext_height + CHARROM_HEIGHT*4));
 wire [2:0] scrolltext_palidx = scrollh[6:4] + scrollv[5:3];
 wire [5:0] char_r, char_g, char_b;
 palette palette (
@@ -100,7 +102,7 @@ parameter PLANE_Y_START = 240;
 parameter PLANE_Y_SKIPLINES = 33;
 wire [8:0] plane_y = v_count - PLANE_Y_START + PLANE_Y_SKIPLINES;
 wire display_plane = v_count >= PLANE_Y_START;
-reg [17:0] plane_u;
+reg [20:0] plane_u;
 reg [10:0] plane_du;
 wire [9:0] plane_v = plane_du;  // hack: the vertical component happens to be equal to the horizontal step size
 wire [10:0] plane_dx;
@@ -166,8 +168,8 @@ end
 //wire [10:0] hscroll = h_count + a_scrollx;
 //wire [9:0] vscroll = v_count + a_scrolly;
 //wire checkerboard = display_plane ? (plane_u[16] ^ plane_v[6]) : hscroll[7] ^ vscroll[6];
-wire [10:0] hscroll = (display_plane ? plane_u[17:9] : h_count) + a_scrollx;
-wire [9:0] vscroll = (display_plane ? plane_v[9:1] : v_count) + a_scrolly;
+wire [10:0] hscroll = plane_u[17:9] + a_scrollx;
+wire [9:0] vscroll = plane_v[9:1] + a_scrolly;
 wire checkerboard = hscroll[7] ^ vscroll[6];
 
 // --- starfield
@@ -202,10 +204,9 @@ parameter colorbar2_active = 0;
 wire oscilloscope_active = h_count[10:1] == {3'b0, scanline_audio_sample};
 
 // --- final color mux
-wire scrolltext_active = char_active != 0 && ((v_count >= scrolltext_height) && (v_count < scrolltext_height + CHARROM_HEIGHT*4));
-wire [5:0] r = oscilloscope_active ? 63 : scrolltext_active ? char_r : starfield ? (star_pixel ? 63 : 0) : checkerboard ? hscroll[8:3] : 0;
-wire [5:0] g = oscilloscope_active ? 63 : scrolltext_active ? char_g : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[8:3] : 0;
-wire [5:0] b = oscilloscope_active ? 63 : scrolltext_active ? char_b : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[7:2] : 0;
+wire [5:0] r = oscilloscope_active ? 63 : scrolltext_active ? char_r : starfield ? (star_pixel ? 63 : 0) : checkerboard ? shadow_active ? {2'b0, hscroll[8:5]} : hscroll[8:3] : 0;
+wire [5:0] g = oscilloscope_active ? 63 : scrolltext_active ? char_g : starfield ? (star_pixel ? 63 : 0) : checkerboard ? shadow_active ? {2'b0, vscroll[8:5]} : vscroll[8:3] : 0;
+wire [5:0] b = oscilloscope_active ? 63 : scrolltext_active ? char_b : starfield ? (star_pixel ? 63 : 0) : checkerboard ? shadow_active ? {2'b0, vscroll[7:4]} : vscroll[7:2] : 0;
 
 /*
 wire [5:0] r = donut_visible ? donut_luma      : starfield ? (star_pixel ? 63 : 0) : checkerboard ? hscroll[8:3] : 0;

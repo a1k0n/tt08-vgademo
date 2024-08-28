@@ -23,7 +23,8 @@ looks best on a real CRT, but any VGA monitor ought to work.
 Sound is generated using a 16-bit sigma-delta DAC on io7 from an internal
 3-channel synth (triangle, noise, and square waves).
 
-I will add more info here after the deadline passes, as the demo is in flux and hard to explain :)
+I will add more info here after the deadline passes, as the demo is in flux as I
+try to fit effects into 2 tiles...
 
 ## How to test
 
@@ -38,3 +39,6 @@ Follows the [democompo hardware rules](https://tinytapeout.com/competitions/demo
 1-bit sound on io[7], compatible with [Tiny Tapeout Audio
 Pmod](https://github.com/MichaelBell/tt-audio-pmod), or any basic ~20kHz RC filter
 on io7 to an amplifier will work.
+
+This audio is not going to sound very good on the built-in piezo speaker on the
+Pmod, though, so an external speaker is highly recommended.
