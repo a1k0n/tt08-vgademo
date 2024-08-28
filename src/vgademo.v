@@ -53,16 +53,20 @@ task step_sincos;
 endtask
 
 // --- sine scroller
-wire [9:0] scrolltext_height = (a_sin >>> 7) + 186 + (b_cos >>> 9);
-wire [2:0] chardata;
+//wire [9:0] scrolltext_height = (a_sin >>> 7) + 186 + (b_cos >>> 9);
+//wire [9:0] scrolltext_height = (a_sin >>> 9) + 93 + (b_cos >>> 9);
+wire [9:0] scrolltext_height = PLANE_Y_START - 32 - CHARROM_HEIGHT*4 + (b_cos >>> 9);
+//wire [2:0] chardata;
+wire char_active_;
 wire [6:0] scrollv = v_count[6:0] - scrolltext_height[6:0];
 wire [10:0] scrollh = h_count + (frame<<3) + (frame<<2);
-charrom charrom (
+charmask charmask (
     .xaddr(scrollh[9:3]),
     .yaddr(scrollv[6:2]),
-    .data(chardata)
+    .data(char_active_)
 );
-wire [2:0] scrolltext_palidx = scrollh[10] ? chardata[2:0] : 0;
+wire char_active = scrollh[10] & char_active_;
+wire [2:0] scrolltext_palidx = scrollh[6:4] + scrollv[5:3];
 wire [5:0] char_r, char_g, char_b;
 palette palette (
     .color(scrolltext_palidx),
@@ -198,7 +202,7 @@ parameter colorbar2_active = 0;
 wire oscilloscope_active = h_count[10:1] == {3'b0, scanline_audio_sample};
 
 // --- final color mux
-wire scrolltext_active = scrolltext_palidx != 0 && ((v_count >= scrolltext_height) && (v_count < scrolltext_height + CHARROM_HEIGHT*4));
+wire scrolltext_active = char_active != 0 && ((v_count >= scrolltext_height) && (v_count < scrolltext_height + CHARROM_HEIGHT*4));
 wire [5:0] r = oscilloscope_active ? 63 : scrolltext_active ? char_r : starfield ? (star_pixel ? 63 : 0) : checkerboard ? hscroll[8:3] : 0;
 wire [5:0] g = oscilloscope_active ? 63 : scrolltext_active ? char_g : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[8:3] : 0;
 wire [5:0] b = oscilloscope_active ? 63 : scrolltext_active ? char_b : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[7:2] : 0;
@@ -212,6 +216,12 @@ wire [5:0] b = donut_visible ? (donut_luma>>2) : starfield ? (star_pixel ? 63 : 
 wire [5:0] r = scrolltext_active ? char_r : donut_visible ? donut_luma      : starfield ? (star_pixel ? 63 : 0) : checkerboard ? hscroll[8:3] : 0;
 wire [5:0] g = scrolltext_active ? char_g : donut_visible ? 0               : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[8:3] : 0;
 wire [5:0] b = scrolltext_active ? char_b : donut_visible ? (donut_luma>>2) : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[7:2] : 0;
+*/
+
+/*
+wire [5:0] r = oscilloscope_active ? 63 : starfield ? (star_pixel ? 63 : 0) : checkerboard ? hscroll[8:3] : 0;
+wire [5:0] g = oscilloscope_active ? 63 : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[8:3] : 0;
+wire [5:0] b = oscilloscope_active ? 31 : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[7:2] : 0;
 */
 
 // Bayer dithering

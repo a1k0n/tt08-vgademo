@@ -1,16 +1,15 @@
-module charrom (
+module charmask (
   input wire [6:0] xaddr,
   input wire [4:0] yaddr,
-  output wire [2:0] data
+  output wire data
 );
 
   wire [11:0] cxy = {yaddr, xaddr};
-  reg [2:0] rom[0:3584];
+  reg rom[0:4095];
   initial begin
-    $readmemh("../data/charrom.hex", rom);
+    $readmemh("../data/charmask.hex", rom);
   end
   assign data = rom[cxy];
-
 endmodule
 
 module palette (
