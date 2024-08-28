@@ -211,6 +211,7 @@ wire [5:0] b = oscilloscope_active ? 63 : scrolltext_active ? char_b : starfield
 wire [5:0] r = donut_visible ? donut_luma      : starfield ? (star_pixel ? 63 : 0) : checkerboard ? hscroll[8:3] : 0;
 wire [5:0] g = donut_visible ? 0               : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[8:3] : 0;
 wire [5:0] b = donut_visible ? (donut_luma>>2) : starfield ? (star_pixel ? 63 : 0) : checkerboard ? vscroll[7:2] : 0;
+*/
 
 /*
 wire [5:0] r = scrolltext_active ? char_r : donut_visible ? donut_luma      : starfield ? (star_pixel ? 63 : 0) : checkerboard ? hscroll[8:3] : 0;
