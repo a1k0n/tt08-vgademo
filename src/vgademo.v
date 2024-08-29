@@ -13,12 +13,14 @@ wire [15:0] audio_sample;
 reg [6:0] scanline_audio_sample;  // sampled on hblank, used to show oscilloscope
 wire [2:0] audio_kick_frames;
 wire [3:0] audio_snare_frames;
+wire [7:0] audio_songpos;
 audiotrack soundtrack(
     .clk48(clk48),
     .rst_n(rst_n),
     .audio_sample(audio_sample),
     .kick_frames_out(audio_kick_frames),
     .snare_frames_out(audio_snare_frames),
+    .songpos_out(audio_songpos),
     .out(audio_out)
 );
 
@@ -85,13 +87,6 @@ palette palette (
 reg signed [15:0] a_scrollx;
 reg signed [15:0] a_scrolly;
 
-/*
-reg [17:0] lfsr = 18'h1FAF5;
-always @(posedge clk48) begin
-    lfsr <= {lfsr[16:0], lfsr[17] ~^ lfsr[10]};
-end
-*/
-
 task new_frame;
     begin
         frame <= frame + 1;
@@ -109,7 +104,7 @@ wire [8:0] plane_y = v_count - PLANE_Y_START + PLANE_Y_SKIPLINES - audio_kick_fr
 wire display_plane = v_count >= PLANE_Y_START;
 reg [20:0] plane_u;
 reg [10:0] plane_du;
-wire [9:0] plane_v = plane_du;  // hack: the vertical component happens to be equal to the horizontal step size
+wire [10:0] plane_v = plane_du;  // hack: the vertical component happens to be equal to the horizontal step size
 wire [10:0] plane_dx;
 reg [12:0] linelfsr;
 
@@ -173,9 +168,28 @@ end
 //wire [10:0] hscroll = h_count + a_scrollx;
 //wire [9:0] vscroll = v_count + a_scrolly;
 //wire checkerboard = display_plane ? (plane_u[16] ^ plane_v[6]) : hscroll[7] ^ vscroll[6];
-wire [10:0] hscroll = plane_u[17:9] + a_scrollx;
-wire [9:0] vscroll = plane_v[9:1] + a_scrolly;
+wire [11:0] hscroll = plane_u[20:9] + a_scrollx[11:0];
+wire [10:0] vscroll = plane_v[10:1] + a_scrolly[10:0];
 wire checkerboard = hscroll[7] ^ vscroll[6];
+
+wire [3:0] checker_i = hscroll[10:7];
+wire [3:0] checker_j = vscroll[9:6];
+wire [3:0] checker_bayer = {
+    checker_j[0], checker_i[1]^checker_j[1],
+    checker_i[0], checker_i[2]^checker_j[2]
+    //checker_i[2], checker_i[2]^checker_j[2],
+};
+
+//wire active_tile = audio_songpos[7:6] == 3 && (checker_i + checker_j) <= audio_songpos[5:2];
+wire active_tile = audio_songpos[7:6] == 3 && checker_bayer == audio_songpos[3:0];
+
+wire [5:0] checker_raw_r = (active_tile ? 63 : 0) | (checkerboard ? hscroll[8:3] : 0);
+wire [5:0] checker_raw_g = (active_tile ? 63 : 0) | (checkerboard ? vscroll[8:3] : 0);
+wire [5:0] checker_raw_b = (active_tile ? 63 : 0) | (checkerboard ? vscroll[7:2] : 0);
+
+wire [5:0] checker_r = shadow_active ? {2'b0, checker_raw_r[5:2]} : checker_raw_r;
+wire [5:0] checker_g = shadow_active ? {2'b0, checker_raw_g[5:2]} : checker_raw_g;
+wire [5:0] checker_b = shadow_active ? {2'b0, checker_raw_b[5:2]} : checker_raw_b;
 
 // --- starfield
 
@@ -207,12 +221,16 @@ parameter colorbar2_active = 0;
 */
 
 // --- oscilloscope
-wire oscilloscope_active = h_count[10:1] == {3'b0, scanline_audio_sample};
+wire oscilloscope_active = h_count[10:0] < {4'b0, scanline_audio_sample};
+wire oscilloscope_active2 = h_count[10:0] < {4'b0, scanline_audio_sample-8};
+wire [5:0] scope_r = oscilloscope_active2 ? 15 : 63;
+wire [5:0] scope_g = oscilloscope_active2 ? 31 : 63;
+wire [5:0] scope_b = oscilloscope_active2 ? 31 : 63;
 
 // --- final color mux
-wire [5:0] r = oscilloscope_active ? 63 : scrolltext_active ? char_r : starfield ? (star_pixel ? 63 : 0) : checkerboard ? shadow_active ? {2'b0, hscroll[8:5]} : hscroll[8:3] : 0;
-wire [5:0] g = oscilloscope_active ? 63 : scrolltext_active ? char_g : starfield ? (star_pixel ? 63 : 0) : checkerboard ? shadow_active ? {2'b0, vscroll[8:5]} : vscroll[8:3] : 0;
-wire [5:0] b = oscilloscope_active ? 63 : scrolltext_active ? char_b : starfield ? (star_pixel ? 63 : 0) : checkerboard ? shadow_active ? {2'b0, vscroll[7:4]} : vscroll[7:2] : 0;
+wire [5:0] r = oscilloscope_active ? scope_r : scrolltext_active ? char_r : starfield ? (star_pixel ? 63 : 0) : checker_r;
+wire [5:0] g = oscilloscope_active ? scope_g : scrolltext_active ? char_g : starfield ? (star_pixel ? 63 : 0) : checker_g;
+wire [5:0] b = oscilloscope_active ? scope_b : scrolltext_active ? char_b : starfield ? (star_pixel ? 63 : 0) : checker_b;
 
 /*
 wire [5:0] r = donut_visible ? donut_luma      : starfield ? (star_pixel ? 63 : 0) : checkerboard ? hscroll[8:3] : 0;
@@ -254,7 +272,7 @@ function [1:0] dither2;
     input [5:0] color6;
     input [4:0] bayer5;
     begin
-        dither2 = ({1'b0, color6} + {2'b0, bayer5}) >> 5;
+        dither2 = ({1'b0, color6} + {2'b0, bayer5} + color6[0]) >> 5;
     end
 endfunction
 
