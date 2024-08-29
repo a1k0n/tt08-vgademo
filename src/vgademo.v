@@ -12,11 +12,13 @@ module vgademo (
 wire [15:0] audio_sample;
 reg [6:0] scanline_audio_sample;  // sampled on hblank, used to show oscilloscope
 wire [2:0] audio_kick_frames;
+wire [3:0] audio_snare_frames;
 audiotrack soundtrack(
     .clk48(clk48),
     .rst_n(rst_n),
     .audio_sample(audio_sample),
     .kick_frames_out(audio_kick_frames),
+    .snare_frames_out(audio_snare_frames),
     .out(audio_out)
 );
 
@@ -178,7 +180,8 @@ wire checkerboard = hscroll[7] ^ vscroll[6];
 // --- starfield
 
 wire [10:0] starfield_x = linelfsr[12:2] + (frame<<1) + (linelfsr[1] ? frame<<2 : 0) + (linelfsr[0] ? frame<<3 : 0);
-wire star_pixel = h_count >= starfield_x && h_count < starfield_x + 3;
+//wire star_pixel = h_count >= starfield_x && h_count < starfield_x + 3;
+wire star_pixel = h_count >= starfield_x && h_count < starfield_x + 2 + (7^(audio_snare_frames[3:1]));
 wire starfield = !display_plane;
 
 // --- donut

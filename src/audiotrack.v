@@ -2,11 +2,13 @@ module audiotrack (
   input clk48,
   input rst_n,
   output [2:0] kick_frames_out,
+  output [3:0] snare_frames_out,
   output [15:0] audio_sample,
   output reg out);
 
 reg [14:0] noise_lfsr;
 reg [3:0] noise_vol;
+assign snare_frames_out = noise_vol;
 //wire [15:0] noise_mask = 16'hffff >> noise_vol;
 //wire [15:0] noise_output = {2'b0, noise_lfsr[13:0] & noise_mask[13:0]};
 wire signed [15:0] noise_output = {3'b0, noise_lfsr[12:0]} >>> noise_vol;
