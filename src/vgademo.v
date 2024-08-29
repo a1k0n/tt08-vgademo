@@ -222,7 +222,7 @@ parameter colorbar2_active = 0;
 
 // --- oscilloscope
 wire oscilloscope_active = h_count[10:0] < {4'b0, scanline_audio_sample};
-wire oscilloscope_active2 = h_count[10:0] < {4'b0, scanline_audio_sample-8};
+wire oscilloscope_active2 = h_count[10:0] < {4'b0, scanline_audio_sample-6'd8};
 wire [5:0] scope_r = oscilloscope_active2 ? 15 : 63;
 wire [5:0] scope_g = oscilloscope_active2 ? 31 : 63;
 wire [5:0] scope_b = oscilloscope_active2 ? 31 : 63;
