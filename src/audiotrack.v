@@ -1,6 +1,7 @@
 module audiotrack (
   input clk48,
   input rst_n,
+  output [2:0] kick_frames_out,
   output [15:0] audio_sample,
   output reg out);
 
@@ -23,6 +24,7 @@ reg [8:0] tri_osc_i;  // oscillator increment for kick drum and bass
 
 // kick drum
 reg [2:0] kick_frames;
+assign kick_frames_out = kick_frames;
 
 wire [8:0] bassline_inc;
 

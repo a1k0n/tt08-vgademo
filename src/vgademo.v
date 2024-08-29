@@ -11,10 +11,12 @@ module vgademo (
 
 wire [15:0] audio_sample;
 reg [6:0] scanline_audio_sample;  // sampled on hblank, used to show oscilloscope
+wire [2:0] audio_kick_frames;
 audiotrack soundtrack(
     .clk48(clk48),
     .rst_n(rst_n),
     .audio_sample(audio_sample),
+    .kick_frames_out(audio_kick_frames),
     .out(audio_out)
 );
 
@@ -69,6 +71,7 @@ wire char_active = scrollh[10] & char_active_;
 wire scrolltext_active = char_active && ((v_count >= scrolltext_height) && (v_count < scrolltext_height + CHARROM_HEIGHT*4));
 wire shadow_active = char_active && ((plane_v[9:2] >= scrolltext_height) && (plane_v[9:2] < scrolltext_height + CHARROM_HEIGHT*4));
 wire [2:0] scrolltext_palidx = scrollh[6:4] + scrollv[5:3];
+//wire [2:0] scrolltext_palidx = (scrollh[6:1] + scrollv[5:0]) >> 3;
 wire [5:0] char_r, char_g, char_b;
 palette palette (
     .color(scrolltext_palidx),
@@ -100,7 +103,7 @@ endtask
 // start the 3D plane halfway down the screen
 parameter PLANE_Y_START = 240;
 parameter PLANE_Y_SKIPLINES = 33;
-wire [8:0] plane_y = v_count - PLANE_Y_START + PLANE_Y_SKIPLINES;
+wire [8:0] plane_y = v_count - PLANE_Y_START + PLANE_Y_SKIPLINES - audio_kick_frames;
 wire display_plane = v_count >= PLANE_Y_START;
 reg [20:0] plane_u;
 reg [10:0] plane_du;
