@@ -1,3 +1,5 @@
+`default_nettype none
+
 module vgademo (
     input clk48,
     input rst_n,
@@ -29,7 +31,7 @@ parameter H_DISPLAY = 1220;
 parameter H_FRONT_PORCH = 31;
 parameter H_SYNC_PULSE = 183;
 parameter H_BACK_PORCH = 92;
-parameter H_TOTAL = 1525;  // ideally 1525.322; run clock at 4.7989844 MHz for better VGA timing
+parameter H_TOTAL = 1525;  // ideally 1525.322; run clock at 47.989844 MHz for better VGA timing :)
 
 parameter V_DISPLAY = 480;
 parameter V_FRONT_PORCH = 10;

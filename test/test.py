@@ -10,8 +10,8 @@ from cocotb.triggers import ClockCycles
 async def test_project(dut):
     dut._log.info("Start")
 
-    # Set the clock period to 10 us (100 KHz)
-    clock = Clock(dut.clk, 10, units="us")
+    # 50MHz clock
+    clock = Clock(dut.clk, 20, units="ns")
     cocotb.start_soon(clock.start())
 
     # Reset
@@ -29,12 +29,19 @@ async def test_project(dut):
     dut.ui_in.value = 0
     dut.uio_in.value = 0
 
-    # Wait for one clock cycle to see the output values
-    await ClockCycles(dut.clk, 1)
+    # the first scanline on the first frame will have some uninitialized data
+    # (since necessary regs for rendering are computed during the hsync of the
+    # previous scanline); skip it
+    await ClockCycles(dut.clk, 1526)
 
-    # The following assersion is just an example of how to check the output values.
-    # Change it to match the actual expected output of your module:
-    # assert dut.uo_out.value == 50
+    # hsync and vsync should be de-asserted (high)
+    assert dut.uo_out[7].value == 1
+    assert dut.uo_out[3].value == 1
 
-    # Keep testing the module by changing the input values, waiting for
-    # one or more clock cycles, and asserting the expected output values.
+    # hsync should go low after the front porch
+    await ClockCycles(dut.clk, 1220+32)
+    assert dut.uo_out[7].value == 0
+
+    # and high again
+    await ClockCycles(dut.clk, 185)
+    assert dut.uo_out[7].value == 1

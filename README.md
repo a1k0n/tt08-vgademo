@@ -2,7 +2,7 @@
 
 # Tiny Tapeout Verilog Project - a1k0n's democompo entry
 
-![preview](preview.gif)
+![preview](docs/preview.png)
 
 - [Read the documentation for project](docs/info.md)
 

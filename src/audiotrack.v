@@ -1,3 +1,5 @@
+`default_nettype none
+
 module audiotrack (
   input clk48,
   input rst_n,

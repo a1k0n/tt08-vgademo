@@ -1,3 +1,5 @@
+`default_nettype none
+
 // non-restoring division algorithm
 // divides 65536 by a 9-bit input to yield a 16-bit fixed-point reciprocal
 module recip16 (

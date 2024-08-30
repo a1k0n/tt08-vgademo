@@ -1,3 +1,5 @@
+`default_nettype none
+
 module charmask (
   input wire [6:0] xaddr,
   input wire [4:0] yaddr,

@@ -1,3 +1,5 @@
+`default_nettype none
+
 module notetbl (
   input wire [2:0] note,
   output wire [7:0] inc

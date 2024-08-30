@@ -9,6 +9,8 @@ You can also include images in this folder and reference them in the markdown. E
 
 # a1k0n's tinytapeout08 demo compo entry
 
+![preview](preview.png)
+
 ## How it works
 
 It's a standalone VGA+sound demo that fits in two tiles; you'll just have to
