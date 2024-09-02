@@ -17,7 +17,16 @@ void audio_callback(void* userdata, uint8_t* stream, int len) {
     // sigma-delta modulator
     top->rootp->audiotrack__DOT__sample_div = 1023;
     top->clk48 = 0; top->eval(); top->clk48 = 1; top->eval();
-    stream16[i] = top->audio_sample;
+    uint16_t s = top->audio_sample;
+    if (s > 0x8000) {
+      // emulate harmonic distortion from a ~1ns slower rise time than fall
+      // time @ 48MHz; what this means is the upper half of the range gets
+      // "longer" downward pulses than the lower half gets upward pulses.
+      // this is exaggerating the effect and I don't actually hear any
+      // difference
+      s += (s - 0x8000) >> 4;
+    }
+    stream16[i] = s;
   }
   samples_generated += len;
 }
