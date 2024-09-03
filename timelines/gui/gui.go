@@ -1,3 +1,5 @@
+//go:generate make -C ../verilator/vgademo
+
 package gui
 
 import (
@@ -12,13 +14,16 @@ import (
 type GUI struct {
 	w              *g.MasterWindow
 	frame          int32
+	sim            *simulator.Simulator
 	verilator_rgba *image.RGBA
 	running        bool
 	simCond        *sync.Cond
 }
 
 func NewGUI(sim *simulator.Simulator) *GUI {
-	gui := &GUI{}
+	gui := &GUI{
+		sim: sim,
+	}
 	gui.w = g.NewMasterWindow("Timeline Editor", 1220+16, 960+100, 0)
 
 	gui.verilator_rgba = &image.RGBA{
@@ -38,19 +43,13 @@ func NewGUI(sim *simulator.Simulator) *GUI {
 				gui.simCond.L.Unlock()
 			}
 
-			sim.Step()
-			gui.UpdateTexture(sim, gui.frame+1)
+			gui.frame = int32(sim.Step()) - 1
+			gui.verilator_rgba.Pix = sim.GetFramebuffer()
+			g.Update()
 			time.Sleep(time.Millisecond * 8)
 		}
 	}()
 	return gui
-}
-
-func (gui *GUI) UpdateTexture(sim *simulator.Simulator, frame int32) {
-	gui.verilator_rgba.Pix = sim.GetFramebuffer()
-	gui.frame = frame
-	// wake up the main thread
-	g.Update()
 }
 
 func (gui *GUI) Run() {
@@ -71,7 +70,14 @@ func (gui *GUI) Run() {
 			),
 			g.Row(
 				g.Label("Frame"),
-				g.SliderInt(&gui.frame, 0, 60*60*3), // three minutes of frames
+				g.SliderInt(&gui.frame, 0, 60*60*3).OnChange(
+					func() {
+						// override the frame number
+						gui.running = false
+						gui.sim.SetFrame(int(gui.frame))
+						gui.simCond.Signal()
+					},
+				),
 			),
 			g.ImageWithRgba(gui.verilator_rgba).Size(1220, 960),
 		)

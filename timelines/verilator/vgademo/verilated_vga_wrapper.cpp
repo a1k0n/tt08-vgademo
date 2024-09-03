@@ -1,5 +1,6 @@
 #include "verilated_vga.h"
 #include "Vvgademo.h"
+#include "Vvgademo__Syms.h"
 #include "verilated.h"
 #include <memory>
 
@@ -42,7 +43,7 @@ static inline uint32_t lowextend6(uint32_t x) {
   return (x << 6) | (x << 4) | (x << 2) | x;
 }
 
-void verilated_vga_eval(VerilatedVgaTop* vga) {
+int verilated_vga_eval(VerilatedVgaTop* vga) {
   // Implement the evaluation logic from vgademo_tb.cpp
   int k = 0;
   for (int j = 0; j < 525; j++) {
@@ -64,6 +65,11 @@ void verilated_vga_eval(VerilatedVgaTop* vga) {
     }
     k += 1220;
   }
+  return vga->top->rootp->vgademo__DOT__frame;
+}
+
+void verilated_vga_set_frame(VerilatedVgaTop* vga, int frame) {
+  vga->top->rootp->vgademo__DOT__frame = frame;
 }
 
 unsigned char* verilated_vga_get_framebuffer(VerilatedVgaTop* vga) {

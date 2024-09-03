@@ -11,8 +11,11 @@ typedef struct VerilatedVgaTop VerilatedVgaTop;
 // Initialize the Verilated model
 VerilatedVgaTop* verilated_vga_init();
 
-// Evaluate the model for one clock cycle
-void verilated_vga_eval(VerilatedVgaTop* top);
+// Evaluate the model for one clock cycle and return the frame number
+int verilated_vga_eval(VerilatedVgaTop* top);
+
+// Set the frame number
+void verilated_vga_set_frame(VerilatedVgaTop* top, int frame);
 
 // Get the current framebuffer data
 unsigned char* verilated_vga_get_framebuffer(VerilatedVgaTop* top);

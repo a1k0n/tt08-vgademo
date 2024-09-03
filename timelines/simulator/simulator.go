@@ -16,8 +16,12 @@ func NewSimulator() *Simulator {
 	}
 }
 
-func (s *Simulator) Step() {
-	C.verilated_vga_eval(s.vga)
+func (s *Simulator) Step() int {
+	return int(C.verilated_vga_eval(s.vga))
+}
+
+func (s *Simulator) SetFrame(frame int) {
+	C.verilated_vga_set_frame(s.vga, C.int(frame))
 }
 
 func (s *Simulator) GetFramebuffer() []byte {
