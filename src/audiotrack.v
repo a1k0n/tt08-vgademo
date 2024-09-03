@@ -91,7 +91,7 @@ notetbl bassnote_tbl (
   .inc(bassnote_inc)
 );
 
-assign bassline_inc = bassnote_inc << bassoct;
+assign bassline_inc = {1'b0, bassnote_inc} << bassoct;
 
 wire [2:0] pulse_note;
 wire pulse_trigger;
@@ -156,7 +156,7 @@ task gen_sample;
     end
     noise_lfsr <= {noise_lfsr[0], noise_lfsr[0] ^ noise_lfsr[14], noise_lfsr[13:1]};
     tri_osc_p <= tri_osc_p + {6'b0, tri_osc_i};
-    pulse_osc_p <= pulse_osc_p + {4'b0, pulse_osc_i};
+    pulse_osc_p <= pulse_osc_p + {6'b0, pulse_osc_i};
   end
 endtask
 
