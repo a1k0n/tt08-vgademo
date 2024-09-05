@@ -203,7 +203,7 @@ wire starfield = !display_plane;
 // --- oscilloscope
 wire oscilloscope_active = h_count[10:0] < {4'b0, scanline_audio_sample};
 wire oscilloscope_active2 = h_count[10:0] < {4'b0, scanline_audio_sample-6'd8};
-wire [5:0] scope_r = oscilloscope_active2 ? 15 : 63;
+wire [5:0] scope_r = oscilloscope_active2 ? 11 : 63;
 wire [5:0] scope_g = oscilloscope_active2 ? 31 : 63;
 wire [5:0] scope_b = oscilloscope_active2 ? 31 : 63;
 
@@ -224,7 +224,7 @@ function [1:0] dither2;
     input [5:0] color6;
     input [4:0] bayer5;
     begin
-        dither2 = ({1'b0, color6} + {2'b0, bayer5} + color6[0]) >> 5;
+        dither2 = ({1'b0, color6} + {2'b0, bayer5} + color6[0] + color6[5] + color6[5:1]) >> 5;
     end
 endfunction
 
