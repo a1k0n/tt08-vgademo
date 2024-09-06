@@ -148,6 +148,21 @@ wire [10:0] plane_v = plane_du;  // hack: the vertical component happens to be e
 wire [10:0] plane_dx;
 reg [12:0] linelfsr;
 
+reg [3:0] sky_r_rom [0:31];
+reg [3:0] sky_g_rom [0:31];
+reg [3:0] sky_b_rom [0:31];
+
+initial begin
+    $readmemh("../data/skyr.hex", sky_r_rom);
+    $readmemh("../data/skyg.hex", sky_g_rom);
+    $readmemh("../data/skyb.hex", sky_b_rom);
+end
+
+wire [4:0] skycolor = frame < 1009 ? (frame + (v_count>>4))>>5 : 31;
+wire [5:0] sky_r = {sky_r_rom[skycolor], 2'b0};
+wire [5:0] sky_g = {sky_g_rom[skycolor], 2'b0};
+wire [5:0] sky_b = {sky_b_rom[skycolor], 2'b0};
+
 // we can compute this at the beginning of the previous line; it'll get picked
 // up at the end.
 recip16 plane_dx_div (
@@ -236,9 +251,16 @@ wire [5:0] checker_b = shadow_active ? {2'b0, checker_raw_b[5:2]} : checker_raw_
 wire [10:0] starfield_x = linelfsr[12:2] + (frame<<1) + (linelfsr[1] ? frame<<2 : 0) + (linelfsr[0] ? frame<<3 : 0);
 //wire star_pixel = h_count >= starfield_x && h_count < starfield_x + 3;
 wire star_pixel = h_count >= starfield_x && h_count < starfield_x + 2 + (7^(audio_snare_frames[3:1]));
-wire [5:0] star_off_color = 
+
+wire [5:0] bg_r = 
     frame < 32 ? (63 - frame[4:0]<<1) :
-    6'd0;
+    sky_r;
+wire [5:0] bg_g = 
+    frame < 32 ? (63 - frame[4:0]<<1) :
+    sky_g;
+wire [5:0] bg_b = 
+    frame < 32 ? (63 - frame[4:0]<<1) :
+    sky_b;
     
 wire starfield = !display_plane;
 
@@ -250,9 +272,9 @@ wire [5:0] scope_g = oscilloscope_active2 ? 31 : 63;
 wire [5:0] scope_b = oscilloscope_active2 ? 31 : 63;
 
 // --- final color mux
-wire [5:0] r = oscilloscope_active ? scope_r : scrolltext_active ? char_r : starfield ? (star_pixel ? 63 : star_off_color) : checker_r;
-wire [5:0] g = oscilloscope_active ? scope_g : scrolltext_active ? char_g : starfield ? (star_pixel ? 63 : star_off_color) : checker_g;
-wire [5:0] b = oscilloscope_active ? scope_b : scrolltext_active ? char_b : starfield ? (star_pixel ? 63 : star_off_color) : checker_b;
+wire [5:0] r = oscilloscope_active ? scope_r : scrolltext_active ? char_r : starfield ? (star_pixel ? 63 : bg_r) : checker_r;
+wire [5:0] g = oscilloscope_active ? scope_g : scrolltext_active ? char_g : starfield ? (star_pixel ? 63 : bg_g) : checker_g;
+wire [5:0] b = oscilloscope_active ? scope_b : scrolltext_active ? char_b : starfield ? (star_pixel ? 63 : bg_b) : checker_b;
 
 // Bayer dithering
 // this is a 8x4 Bayer matrix which gets toggled every frame (so the other 8x4 elements are actually on odd frames)
