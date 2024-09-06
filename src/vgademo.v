@@ -116,6 +116,7 @@ end
 parameter SUNRISE_START = SCROLLTEXT_IN_END;
 parameter SUNRISE_END = SUNRISE_START + 16 * 64;
 
+/*
 wire [4:0] _skycolor = ((frame - SUNRISE_START) + (v_count>>4))>>6;
 wire [3:0] skycolor = 
     frame < SUNRISE_START ? 0 :
@@ -124,6 +125,13 @@ wire [3:0] skycolor =
 wire [5:0] sky_r = {sky_r_rom[skycolor], 2'b0};
 wire [5:0] sky_g = {sky_g_rom[skycolor], 2'b0};
 wire [5:0] sky_b = {sky_b_rom[skycolor], 2'b0};
+*/
+
+wire signed [7:0] _skycolor = ((frame - SUNRISE_START) + (v_count>>2) - 120)>>>4;
+wire [5:0] skycolor = _skycolor[7] ? 0 : _skycolor[6] ? 63 : _skycolor[5:0];
+wire [5:0] sky_r = 0;
+wire [5:0] sky_g = 0;
+wire [5:0] sky_b = skycolor;
 
 
 /*
@@ -262,7 +270,7 @@ wire [5:0] checker_b = shadow_active ? {2'b0, checker_raw_b[5:2]} : checker_raw_
 
 wire [10:0] starfield_x = linelfsr[12:2] + (frame<<1) + (linelfsr[1] ? frame<<2 : 0) + (linelfsr[0] ? frame<<3 : 0);
 //wire star_pixel = h_count >= starfield_x && h_count < starfield_x + 3;
-wire star_pixel = skycolor < 12 && h_count >= starfield_x && h_count < starfield_x + 2 + (7^(audio_snare_frames[3:1]));
+wire star_pixel = _skycolor < 63 && h_count >= starfield_x && h_count < starfield_x + 2 + (7^(audio_snare_frames[3:1]));
 
 wire [5:0] bg_r = 
     frame < 32 ? (63 - frame[4:0]<<1) :
