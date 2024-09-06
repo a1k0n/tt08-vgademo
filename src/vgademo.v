@@ -150,9 +150,9 @@ wire [10:0] plane_v = plane_du;  // hack: the vertical component happens to be e
 wire [10:0] plane_dx;
 reg [12:0] linelfsr;
 
-reg [3:0] sky_r_rom [0:31];
-reg [3:0] sky_g_rom [0:31];
-reg [3:0] sky_b_rom [0:31];
+reg [3:0] sky_r_rom [0:15];
+reg [3:0] sky_g_rom [0:15];
+reg [3:0] sky_b_rom [0:15];
 
 initial begin
     $readmemh("../data/skyr.hex", sky_r_rom);
@@ -160,7 +160,7 @@ initial begin
     $readmemh("../data/skyb.hex", sky_b_rom);
 end
 
-wire [4:0] skycolor = frame < 1009 ? (frame + (v_count>>4))>>5 : 31;
+wire [3:0] skycolor = frame < 1009 ? (frame + (v_count>>4))>>6 : 15;
 wire [5:0] sky_r = {sky_r_rom[skycolor], 2'b0};
 wire [5:0] sky_g = {sky_g_rom[skycolor], 2'b0};
 wire [5:0] sky_b = {sky_b_rom[skycolor], 2'b0};
@@ -254,7 +254,7 @@ wire [5:0] checker_b = shadow_active ? {2'b0, checker_raw_b[5:2]} : checker_raw_
 
 wire [10:0] starfield_x = linelfsr[12:2] + (frame<<1) + (linelfsr[1] ? frame<<2 : 0) + (linelfsr[0] ? frame<<3 : 0);
 //wire star_pixel = h_count >= starfield_x && h_count < starfield_x + 3;
-wire star_pixel = skycolor < 24 && h_count >= starfield_x && h_count < starfield_x + 2 + (7^(audio_snare_frames[3:1]));
+wire star_pixel = skycolor < 12 && h_count >= starfield_x && h_count < starfield_x + 2 + (7^(audio_snare_frames[3:1]));
 
 wire [5:0] bg_r = 
     frame < 32 ? (63 - frame[4:0]<<1) :
