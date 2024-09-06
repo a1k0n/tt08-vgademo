@@ -160,7 +160,14 @@ initial begin
     $readmemh("../data/skyb.hex", sky_b_rom);
 end
 
-wire [3:0] skycolor = frame < 1009 ? (frame + (v_count>>4))>>6 : 15;
+parameter SUNRISE_START = SCROLLTEXT_IN_END;
+parameter SUNRISE_END = SUNRISE_START + 16 * 64;
+
+wire [4:0] _skycolor = ((frame - SUNRISE_START) + (v_count>>4))>>6;
+wire [3:0] skycolor = 
+    frame < SUNRISE_START ? 0 :
+    frame < SUNRISE_END & !_skycolor[4] ? _skycolor :
+    15;
 wire [5:0] sky_r = {sky_r_rom[skycolor], 2'b0};
 wire [5:0] sky_g = {sky_g_rom[skycolor], 2'b0};
 wire [5:0] sky_b = {sky_b_rom[skycolor], 2'b0};
