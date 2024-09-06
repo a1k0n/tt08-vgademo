@@ -103,6 +103,29 @@ task new_frame;
     end
 endtask
 
+reg [3:0] sky_r_rom [0:15];
+reg [3:0] sky_g_rom [0:15];
+reg [3:0] sky_b_rom [0:15];
+
+initial begin
+    $readmemh("../data/skyr.hex", sky_r_rom);
+    $readmemh("../data/skyg.hex", sky_g_rom);
+    $readmemh("../data/skyb.hex", sky_b_rom);
+end
+
+parameter SUNRISE_START = SCROLLTEXT_IN_END;
+parameter SUNRISE_END = SUNRISE_START + 16 * 64;
+
+wire [4:0] _skycolor = ((frame - SUNRISE_START) + (v_count>>4))>>6;
+wire [3:0] skycolor = 
+    frame < SUNRISE_START ? 0 :
+    frame < SUNRISE_END & !_skycolor[4] ? _skycolor :
+    15;
+wire [5:0] sky_r = {sky_r_rom[skycolor], 2'b0};
+wire [5:0] sky_g = {sky_g_rom[skycolor], 2'b0};
+wire [5:0] sky_b = {sky_b_rom[skycolor], 2'b0};
+
+
 /*
     frame | song | section
         0 | 0    | 0
@@ -149,28 +172,6 @@ reg [10:0] plane_du;
 wire [10:0] plane_v = plane_du;  // hack: the vertical component happens to be equal to the horizontal step size
 wire [10:0] plane_dx;
 reg [12:0] linelfsr;
-
-reg [3:0] sky_r_rom [0:15];
-reg [3:0] sky_g_rom [0:15];
-reg [3:0] sky_b_rom [0:15];
-
-initial begin
-    $readmemh("../data/skyr.hex", sky_r_rom);
-    $readmemh("../data/skyg.hex", sky_g_rom);
-    $readmemh("../data/skyb.hex", sky_b_rom);
-end
-
-parameter SUNRISE_START = SCROLLTEXT_IN_END;
-parameter SUNRISE_END = SUNRISE_START + 16 * 64;
-
-wire [4:0] _skycolor = ((frame - SUNRISE_START) + (v_count>>4))>>6;
-wire [3:0] skycolor = 
-    frame < SUNRISE_START ? 0 :
-    frame < SUNRISE_END & !_skycolor[4] ? _skycolor :
-    15;
-wire [5:0] sky_r = {sky_r_rom[skycolor], 2'b0};
-wire [5:0] sky_g = {sky_g_rom[skycolor], 2'b0};
-wire [5:0] sky_b = {sky_b_rom[skycolor], 2'b0};
 
 // we can compute this at the beginning of the previous line; it'll get picked
 // up at the end.
