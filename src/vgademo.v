@@ -51,17 +51,17 @@ wire display_active = (h_count < H_DISPLAY) && (v_count < V_DISPLAY);
 
 reg signed [15:0] a_cos;
 reg signed [15:0] a_sin;
-reg signed [15:0] b_cos;
-reg signed [15:0] b_sin;
+reg signed [11:0] b_cos;
+reg signed [11:0] b_sin;
 wire signed [15:0] acos1 = a_cos - (a_sin >>> 6);
 wire signed [15:0] asin1 = a_sin + (acos1 >>> 6);
-wire signed [15:0] bcos1 = b_cos - (b_sin >>> 7);
-wire signed [15:0] bsin1 = b_sin + (bcos1 >>> 7);
+wire signed [11:0] bcos1 = b_cos - (b_sin >>> 7);
+wire signed [11:0] bsin1 = b_sin + (bcos1 >>> 7);
 
 // --- sine scroller
 //wire [9:0] scrolltext_height = (a_sin >>> 7) + 186 + (b_cos >>> 9);
 //wire [9:0] scrolltext_height = (a_sin >>> 9) + 93 + (b_cos >>> 9);
-wire [9:0] scrolltext_height = 240 - 32 - CHARROM_HEIGHT*4 + (b_cos >>> 9);
+wire [9:0] scrolltext_height = 240 - 32 - CHARROM_HEIGHT*4 + (b_cos >>> 5);
 //wire [2:0] chardata;
 wire char_active_;
 wire [6:0] scrollv = (display_plane ? plane_v[8:2] : v_count[6:0]) - scrolltext_height[6:0];
@@ -188,8 +188,8 @@ task start_of_next_line;
         plane_du <= plane_dx;
         //plane_u <= -(plane_dx * (H_DISPLAY>>1));
         plane_u <= -((plane_dx<<1) + (plane_dx<<5) + (plane_dx<<6) + (plane_dx<<9));
-        b_cos <= a_cos;
-        b_sin <= a_sin;
+        b_cos <= a_cos >>> 4;
+        b_sin <= a_sin >>> 4;
 
         linelfsr <= linelfsr[0] ? (linelfsr>>1) ^ 13'h1159 : linelfsr>>1;
 
@@ -218,7 +218,7 @@ always @(posedge clk48 or negedge rst_n) begin
         end else begin
             h_count <= h_count + 1;
             b_cos <= bcos1;
-            b_sin <= b_sin + (bcos1 >>> 7);
+            b_sin <= bsin1;
         end
 
         // Start of next line, plus clock cycles to account for divider to finish
