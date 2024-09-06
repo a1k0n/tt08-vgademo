@@ -6,6 +6,7 @@ module audiotrack (
   output [2:0] kick_frames_out,
   output [3:0] snare_frames_out,
   output [7:0] songpos_out,
+  output [4:0] beat_out,
   output [15:0] audio_sample,
   output reg out);
 
@@ -47,6 +48,7 @@ reg [4:0] beat_div;
 // 256 beats for the whole song
 reg [7:0] songpos;
 assign songpos_out = songpos;
+assign beat_out = beat_div;
 
 wire [10:0] sample_div_ = sample_div + 1;
 wire [8:0] tick_div_ = tick_div + 1;

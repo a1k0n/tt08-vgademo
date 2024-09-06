@@ -16,6 +16,7 @@ reg [6:0] scanline_audio_sample;  // sampled on hblank, used to show oscilloscop
 wire [2:0] audio_kick_frames;
 wire [3:0] audio_snare_frames;
 wire [7:0] audio_songpos;
+wire [4:0] audio_beat_out;
 audiotrack soundtrack(
     .clk48(clk48),
     .rst_n(rst_n),
@@ -23,6 +24,7 @@ audiotrack soundtrack(
     .kick_frames_out(audio_kick_frames),
     .snare_frames_out(audio_snare_frames),
     .songpos_out(audio_songpos),
+    .beat_out(audio_beat_out),
     .out(audio_out)
 );
 
@@ -235,12 +237,14 @@ wire [3:0] checker_bayer = {
     //checker_i[2], checker_i[2]^checker_j[2],
 };
 
-wire active_tile = audio_songpos[7:6] == 3 && (checker_i + checker_j) <= audio_songpos[5:2];
-//wire active_tile = audio_songpos[7:6] == 3 && checker_bayer <= audio_songpos[3:0];
+wire whiteout_tile = audio_songpos[7:6] == 3 && (checker_i + checker_j) <= audio_songpos[5:2];
+wire sparkly_tile = audio_songpos[7:6] > 1 && checker_bayer == audio_songpos[3:0];
 
-wire [5:0] checker_raw_r = (active_tile ? 63 : 0) | (checkerboard ? hscroll[8:3] : 0);
-wire [5:0] checker_raw_g = (active_tile ? 63 : 0) | (checkerboard ? vscroll[8:3] : 0);
-wire [5:0] checker_raw_b = (active_tile ? 63 : 0) | (checkerboard ? vscroll[7:2] : 0);
+wire [5:0] sparkly_color = 63-audio_beat_out;
+
+wire [5:0] checker_raw_r = (whiteout_tile ? 63 : 0) | (sparkly_tile ? sparkly_color : (checkerboard ? hscroll[8:3] : 0));
+wire [5:0] checker_raw_g = (whiteout_tile ? 63 : 0) | (sparkly_tile ? sparkly_color : (checkerboard ? vscroll[8:3] : 0));
+wire [5:0] checker_raw_b = (whiteout_tile ? 63 : 0) | (sparkly_tile ? sparkly_color : (checkerboard ? vscroll[7:2] : 0));
 
 wire [5:0] checker_r = shadow_active ? {2'b0, checker_raw_r[5:2]} : checker_raw_r;
 wire [5:0] checker_g = shadow_active ? {2'b0, checker_raw_g[5:2]} : checker_raw_g;
@@ -250,7 +254,7 @@ wire [5:0] checker_b = shadow_active ? {2'b0, checker_raw_b[5:2]} : checker_raw_
 
 wire [10:0] starfield_x = linelfsr[12:2] + (frame<<1) + (linelfsr[1] ? frame<<2 : 0) + (linelfsr[0] ? frame<<3 : 0);
 //wire star_pixel = h_count >= starfield_x && h_count < starfield_x + 3;
-wire star_pixel = h_count >= starfield_x && h_count < starfield_x + 2 + (7^(audio_snare_frames[3:1]));
+wire star_pixel = skycolor < 24 && h_count >= starfield_x && h_count < starfield_x + 2 + (7^(audio_snare_frames[3:1]));
 
 wire [5:0] bg_r = 
     frame < 32 ? (63 - frame[4:0]<<1) :
