@@ -14,6 +14,10 @@ import (
 type GUI struct {
 	w              *g.MasterWindow
 	frame          int32
+	xpos           int32
+	p3             int32
+	p4             int32
+	p5             int32
 	sim            *simulator.Simulator
 	verilator_rgba *image.RGBA
 	running        bool
@@ -53,6 +57,11 @@ func NewGUI(sim *simulator.Simulator) *GUI {
 }
 
 func (gui *GUI) Run() {
+	update_params := func() {
+		gui.sim.SetParams(int(gui.frame), int(gui.xpos), int(gui.p3), int(gui.p4), int(gui.p5))
+		gui.simCond.Signal()
+	}
+
 	gui.w.Run(func() {
 		g.SingleWindow().Layout(
 			g.Row(
@@ -70,14 +79,29 @@ func (gui *GUI) Run() {
 			),
 			g.Row(
 				g.Label("Frame"),
-				g.SliderInt(&gui.frame, 0, 60*60*3).OnChange(
+				g.SliderInt(&gui.frame, 0, 1467*2).OnChange(
 					func() {
 						// override the frame number
 						gui.running = false
-						gui.sim.SetFrame(int(gui.frame))
-						gui.simCond.Signal()
+						update_params()
 					},
 				),
+			),
+			g.Row(
+				g.Label("XPos"),
+				g.SliderInt(&gui.xpos, 0, 2048).OnChange(update_params),
+			),
+			g.Row(
+				g.Label("p3"),
+				g.SliderInt(&gui.p3, 0, 1024).OnChange(update_params),
+			),
+			g.Row(
+				g.Label("p4"),
+				g.SliderInt(&gui.p4, 0, 1024).OnChange(update_params),
+			),
+			g.Row(
+				g.Label("p5"),
+				g.SliderInt(&gui.p5, 0, 1024).OnChange(update_params),
 			),
 			g.ImageWithRgba(gui.verilator_rgba).Size(1220, 960),
 		)

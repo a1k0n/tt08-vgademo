@@ -52,28 +52,25 @@ reg signed [15:0] a_sin;
 reg signed [15:0] b_cos;
 reg signed [15:0] b_sin;
 wire signed [15:0] acos1 = a_cos - (a_sin >>> 6);
+wire signed [15:0] asin1 = a_sin + (acos1 >>> 6);
 wire signed [15:0] bcos1 = b_cos - (b_sin >>> 7);
-task step_sincos;
-    begin
-        a_cos <= acos1;
-        a_sin <= a_sin + (acos1 >>> 6);
-    end
-endtask
+wire signed [15:0] bsin1 = b_sin + (bcos1 >>> 7);
 
 // --- sine scroller
 //wire [9:0] scrolltext_height = (a_sin >>> 7) + 186 + (b_cos >>> 9);
 //wire [9:0] scrolltext_height = (a_sin >>> 9) + 93 + (b_cos >>> 9);
-wire [9:0] scrolltext_height = PLANE_Y_START - 32 - CHARROM_HEIGHT*4 + (b_cos >>> 9);
+wire [9:0] scrolltext_height = 240 - 32 - CHARROM_HEIGHT*4 + (b_cos >>> 9);
 //wire [2:0] chardata;
 wire char_active_;
 wire [6:0] scrollv = (display_plane ? plane_v[8:2] : v_count[6:0]) - scrolltext_height[6:0];
-wire [10:0] scrollh = (display_plane ? plane_u[20:10] : h_count - 610) + (frame<<3) + (frame<<2);
+wire [11:0] scrollh_anim;
+wire [11:0] scrollh = (display_plane ? plane_u[21:10] : h_count - 610) + scrollh_anim;
 charmask charmask (
     .xaddr(scrollh[9:3]),
     .yaddr(scrollv[6:2]),
     .data(char_active_)
 );
-wire char_active = scrollh[10] & char_active_;
+wire char_active = scrollh[11] & scrollh[10] & char_active_;
 wire scrolltext_active = char_active && ((v_count >= scrolltext_height) && (v_count < scrolltext_height + CHARROM_HEIGHT*4));
 wire shadow_active = char_active && ((plane_v[9:2] >= scrolltext_height) && (plane_v[9:2] < scrolltext_height + CHARROM_HEIGHT*4));
 wire [2:0] scrolltext_palidx = scrollh[6:4] + scrollv[5:3];
@@ -86,25 +83,66 @@ palette palette (
     .b(char_b)
 );
 
-reg signed [15:0] a_scrollx;
-reg signed [15:0] a_scrolly;
+//reg signed [15:0] a_scrollx;
+//reg signed [15:0] a_scrolly;
+wire signed [15:0] a_scrollx = a_cos>>>5;
+wire signed [15:0] a_scrolly = frame << 3;
 
 task new_frame;
     begin
-        frame <= frame + 1;
-        a_scrollx <= a_scrollx + (a_cos >>> 10);
-        a_scrolly <= a_scrolly + (a_sin >>> 11);
-        step_sincos;
+        // reset the frame counter when the song restarts
+        frame <= (frame > 8 && audio_songpos == 0) ? 0 : frame + 1;
+        // $display("frame=%d audio_songpos=%d", frame, audio_songpos);
+        //a_scrollx <= a_scrollx + (a_cos >>> 10);
+        //a_scrolly <= a_scrolly + (a_sin >>> 11);
+        a_cos <= acos1;
+        a_sin <= asin1;
         linelfsr <= 13'h1AFA;
     end
 endtask
 
+/*
+    frame | song | section
+        0 | 0    | 0
+      209 | 32
+      419 | 64   | 1
+      628 | 96
+      838 | 128  | 2
+     1048 | 160
+     1257 | 192  | 3
+     1467 | 224
+     1677 | 256  | 4
+*/
+
+parameter SCROLLTEXT_IN_START = 100;
+parameter SCROLLTEXT_IN_END = SCROLLTEXT_IN_START + 69;
+parameter SCROLLTEXT_OUT_START = PLANE_OUT_START - 69;
+parameter SCROLLTEXT_OUT_END = PLANE_OUT_START;
+
+assign scrollh_anim = //3548 - frame;
+    frame < SCROLLTEXT_IN_START ? 2048 :
+    frame < SCROLLTEXT_IN_END ? 3548 - 1104+(frame-SCROLLTEXT_IN_START<<4) :
+    frame < SCROLLTEXT_OUT_START ? 3548 :
+    frame < SCROLLTEXT_OUT_END ? 3548 +(frame-SCROLLTEXT_OUT_START<<4) :
+    2048;
+
 // start the 3D plane halfway down the screen
-parameter PLANE_Y_START = 240;
+//parameter PLANE_Y_START = 240;
 parameter PLANE_Y_SKIPLINES = 33;
-wire [8:0] plane_y = v_count - PLANE_Y_START + PLANE_Y_SKIPLINES - audio_kick_frames;
-wire display_plane = v_count >= PLANE_Y_START;
-reg [20:0] plane_u;
+parameter PLANE_IN_START = 209;
+parameter PLANE_IN_END = PLANE_IN_START + 240;
+parameter PLANE_OUT_START = PLANE_OUT_END - 240;
+parameter PLANE_OUT_END = 1671;
+wire [8:0] plane_y_start =
+    frame < PLANE_IN_START ? 480 :
+    frame < PLANE_IN_END ? 480 - (frame - PLANE_IN_START) :
+    frame < PLANE_OUT_START ? 240 :
+    frame < PLANE_OUT_END ? 240 - (frame - PLANE_OUT_START) :
+    0;
+
+wire [8:0] plane_y = v_count - plane_y_start + PLANE_Y_SKIPLINES - audio_kick_frames;
+wire display_plane = v_count >= plane_y_start;
+reg [21:0] plane_u;
 reg [10:0] plane_du;
 wire [10:0] plane_v = plane_du;  // hack: the vertical component happens to be equal to the horizontal step size
 wire [10:0] plane_dx;
@@ -140,8 +178,8 @@ always @(posedge clk48 or negedge rst_n) begin
         h_count <= 0;
         v_count <= 0;
         frame <= 0;
-        a_scrollx <= 0;
-        a_scrolly <= 0;
+        //a_scrollx <= 0;
+        //a_scrolly <= 0;
         a_cos <= 16'h4000;
         a_sin <= 16'h0000;
     end else begin
@@ -182,8 +220,8 @@ wire [3:0] checker_bayer = {
     //checker_i[2], checker_i[2]^checker_j[2],
 };
 
-//wire active_tile = audio_songpos[7:6] == 3 && (checker_i + checker_j) <= audio_songpos[5:2];
-wire active_tile = audio_songpos[7:6] == 3 && checker_bayer == audio_songpos[3:0];
+wire active_tile = audio_songpos[7:6] == 3 && (checker_i + checker_j) <= audio_songpos[5:2];
+//wire active_tile = audio_songpos[7:6] == 3 && checker_bayer <= audio_songpos[3:0];
 
 wire [5:0] checker_raw_r = (active_tile ? 63 : 0) | (checkerboard ? hscroll[8:3] : 0);
 wire [5:0] checker_raw_g = (active_tile ? 63 : 0) | (checkerboard ? vscroll[8:3] : 0);
@@ -198,6 +236,10 @@ wire [5:0] checker_b = shadow_active ? {2'b0, checker_raw_b[5:2]} : checker_raw_
 wire [10:0] starfield_x = linelfsr[12:2] + (frame<<1) + (linelfsr[1] ? frame<<2 : 0) + (linelfsr[0] ? frame<<3 : 0);
 //wire star_pixel = h_count >= starfield_x && h_count < starfield_x + 3;
 wire star_pixel = h_count >= starfield_x && h_count < starfield_x + 2 + (7^(audio_snare_frames[3:1]));
+wire [5:0] star_off_color = 
+    frame < 32 ? (63 - frame[4:0]<<1) :
+    6'd0;
+    
 wire starfield = !display_plane;
 
 // --- oscilloscope
@@ -208,9 +250,9 @@ wire [5:0] scope_g = oscilloscope_active2 ? 31 : 63;
 wire [5:0] scope_b = oscilloscope_active2 ? 31 : 63;
 
 // --- final color mux
-wire [5:0] r = oscilloscope_active ? scope_r : scrolltext_active ? char_r : starfield ? (star_pixel ? 63 : 0) : checker_r;
-wire [5:0] g = oscilloscope_active ? scope_g : scrolltext_active ? char_g : starfield ? (star_pixel ? 63 : 0) : checker_g;
-wire [5:0] b = oscilloscope_active ? scope_b : scrolltext_active ? char_b : starfield ? (star_pixel ? 63 : 0) : checker_b;
+wire [5:0] r = oscilloscope_active ? scope_r : scrolltext_active ? char_r : starfield ? (star_pixel ? 63 : star_off_color) : checker_r;
+wire [5:0] g = oscilloscope_active ? scope_g : scrolltext_active ? char_g : starfield ? (star_pixel ? 63 : star_off_color) : checker_g;
+wire [5:0] b = oscilloscope_active ? scope_b : scrolltext_active ? char_b : starfield ? (star_pixel ? 63 : star_off_color) : checker_b;
 
 // Bayer dithering
 // this is a 8x4 Bayer matrix which gets toggled every frame (so the other 8x4 elements are actually on odd frames)

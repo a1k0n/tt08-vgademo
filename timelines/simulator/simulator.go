@@ -20,8 +20,8 @@ func (s *Simulator) Step() int {
 	return int(C.verilated_vga_eval(s.vga))
 }
 
-func (s *Simulator) SetFrame(frame int) {
-	C.verilated_vga_set_frame(s.vga, C.int(frame))
+func (s *Simulator) SetParams(frame int, xpos int, p3 int, p4 int, p5 int) {
+	C.verilated_vga_set_params(s.vga, C.int(frame), C.int(xpos), C.int(p3), C.int(p4), C.int(p5))
 }
 
 func (s *Simulator) GetFramebuffer() []byte {

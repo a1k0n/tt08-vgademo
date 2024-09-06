@@ -68,8 +68,9 @@ int verilated_vga_eval(VerilatedVgaTop* vga) {
   return vga->top->rootp->vgademo__DOT__frame;
 }
 
-void verilated_vga_set_frame(VerilatedVgaTop* vga, int frame) {
-  vga->top->rootp->vgademo__DOT__frame = frame;
+void verilated_vga_set_params(VerilatedVgaTop* vga, int p1, int p2, int p3, int p4, int p5) {
+  vga->top->rootp->vgademo__DOT__frame = p1;
+  //vga->top->rootp->vgademo__DOT__PLANE_Y_START = p2;
 }
 
 unsigned char* verilated_vga_get_framebuffer(VerilatedVgaTop* vga) {

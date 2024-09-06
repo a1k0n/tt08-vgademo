@@ -15,7 +15,7 @@ VerilatedVgaTop* verilated_vga_init();
 int verilated_vga_eval(VerilatedVgaTop* top);
 
 // Set the frame number
-void verilated_vga_set_frame(VerilatedVgaTop* top, int frame);
+void verilated_vga_set_params(VerilatedVgaTop* top, int p1, int p2, int p3, int p4, int p5);
 
 // Get the current framebuffer data
 unsigned char* verilated_vga_get_framebuffer(VerilatedVgaTop* top);

@@ -111,6 +111,7 @@ notetbl pulse_note_tbl (
 task step_beat;
   begin
     songpos <= songpos_next;
+    // $display("songpos=%d", songpos);
     if (trigger_kick) begin
       tri_osc_i <= 9'h1c0;
       kick_frames <= 7;
