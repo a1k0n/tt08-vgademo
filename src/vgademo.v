@@ -49,12 +49,12 @@ reg [9:0] v_count;
 
 wire display_active = (h_count < H_DISPLAY) && (v_count < V_DISPLAY);
 
-reg signed [15:0] a_cos;
-reg signed [15:0] a_sin;
+reg signed [14:0] a_cos;
+reg signed [14:0] a_sin;
 reg signed [11:0] b_cos;
 reg signed [11:0] b_sin;
-wire signed [15:0] acos1 = a_cos - (a_sin >>> 6);
-wire signed [15:0] asin1 = a_sin + (acos1 >>> 6);
+wire signed [14:0] acos1 = a_cos - (a_sin >>> 6);
+wire signed [14:0] asin1 = a_sin + (acos1 >>> 6);
 wire signed [11:0] bcos1 = b_cos - (b_sin >>> 7);
 wire signed [11:0] bsin1 = b_sin + (bcos1 >>> 7);
 
@@ -87,7 +87,7 @@ palette palette (
 
 //reg signed [15:0] a_scrollx;
 //reg signed [15:0] a_scrolly;
-wire signed [15:0] a_scrollx = a_cos>>>5;
+wire signed [15:0] a_scrollx = a_cos>>>4;
 wire signed [15:0] a_scrolly = frame << 3;
 
 task new_frame;
@@ -188,8 +188,8 @@ task start_of_next_line;
         plane_du <= plane_dx;
         //plane_u <= -(plane_dx * (H_DISPLAY>>1));
         plane_u <= -((plane_dx<<1) + (plane_dx<<5) + (plane_dx<<6) + (plane_dx<<9));
-        b_cos <= a_cos >>> 4;
-        b_sin <= a_sin >>> 4;
+        b_cos <= a_cos >>> 3;
+        b_sin <= a_sin >>> 3;
 
         linelfsr <= linelfsr[0] ? (linelfsr>>1) ^ 13'h1159 : linelfsr>>1;
 
@@ -205,8 +205,8 @@ always @(posedge clk48 or negedge rst_n) begin
         frame <= 0;
         //a_scrollx <= 0;
         //a_scrolly <= 0;
-        a_cos <= 16'h4000;
-        a_sin <= 16'h0000;
+        a_cos <= 15'h2000;
+        a_sin <= 15'h0000;
     end else begin
         if (h_count == H_TOTAL - 1) begin
             h_count <= 0;
