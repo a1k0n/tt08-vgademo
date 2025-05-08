@@ -81,7 +81,7 @@ def printletters(text):
         for c in text:
             asciicode = ord(c)
             letter = getletter(asciicode)
-            values.extend(letter[row])
+            values.extend([x == 0 and '0' or '1' for x in letter[row][1::2]])
         print(' '.join([str(x) for x in values]))
 
 
