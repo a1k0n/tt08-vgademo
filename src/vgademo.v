@@ -253,7 +253,7 @@ wire [3:0] checker_bayer = {
     //checker_i[2], checker_i[2]^checker_j[2],
 };
 
-wire whiteout_tile = audio_songpos[7:6] == 3 && (checker_i + checker_j) <= audio_songpos[5:2];
+wire whiteout_tile = (frame >= PLANE_OUT_END-2) || ( audio_songpos[7:6] == 3 && (checker_i + checker_j) <= audio_songpos[5:2]);
 wire sparkly_tile = audio_songpos[7:6] > 1 && checker_bayer == audio_songpos[3:0];
 
 wire [5:0] sparkly_color = 63-audio_beat_out;
