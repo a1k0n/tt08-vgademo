@@ -8,7 +8,7 @@
 #define V_TOTAL 525
 #define V_DISPLAY 480
 
-#undef SAVE_FRAMES
+#define SAVE_FRAMES 1
 
 #if SAVE_FRAMES
 #include <SDL2/SDL_image.h>
@@ -33,6 +33,9 @@ int main(int argc, char** argv) {
   top->clk48 = 0; top->eval(); top->clk48 = 1; top->eval();
   top->rst_n = 1;
 
+#if SAVE_FRAMES
+  FILE *rawfp = fopen("video.raw", "wb");
+#endif
   // Initialize SDL
   if (SDL_Init(SDL_INIT_VIDEO) != 0) {
     SDL_Log("Failed to initialize SDL: %s", SDL_GetError());
@@ -112,12 +115,8 @@ int main(int argc, char** argv) {
 
 #if SAVE_FRAMES
     // Save the frame to a file
-    if (frame&1) {
-      char filename[64];
-      sprintf(filename, "frame%04d.png", frame>>1);
-      SDL_Surface* surface = SDL_CreateRGBSurfaceFrom(pixels, H_DISPLAY, V_DISPLAY*2, 32, H_DISPLAY*4, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
-      IMG_SavePNG(surface, filename);
-      SDL_FreeSurface(surface);
+    if (rawfp) {
+      fwrite(pixels, sizeof(uint32_t), H_DISPLAY*V_DISPLAY*2, rawfp);
     }
 #endif
     frame++;

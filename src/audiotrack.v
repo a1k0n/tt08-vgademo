@@ -96,7 +96,6 @@ notetbl bassnote_tbl (
 assign bassline_inc = {1'b0, bassnote_inc} << bassoct;
 
 wire [2:0] pulse_note;
-wire pulse_trigger;
 wire [7:0] pulse_osc_i;
 pulsetrack pulsetrack (
   .songpos(songpos),

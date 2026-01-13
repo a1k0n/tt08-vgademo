@@ -4,7 +4,13 @@
 #include "verilated.h"
 #include <SDL2/SDL.h>
 
+#define SAVE_AUDIO 1
+
 uint64_t samples_generated = 0;
+
+#if SAVE_AUDIO
+FILE *rawfp;
+#endif
 
 // SDL audio callback
 void audio_callback(void* userdata, uint8_t* stream, int len) {
@@ -29,12 +35,24 @@ void audio_callback(void* userdata, uint8_t* stream, int len) {
     stream16[i] = s;
   }
   samples_generated += len;
+
+#if SAVE_AUDIO
+  fwrite(stream, sizeof(uint16_t), len/2, rawfp);
+#endif
 }
 
 int main(int argc, char** argv) {
   Verilated::commandArgs(argc, argv);
 
   Vaudiotrack* top = new Vaudiotrack;
+
+#if SAVE_AUDIO
+  rawfp = fopen("audio.raw", "wb");
+  if (!rawfp) {
+    printf("Failed to open audio.raw\n");
+    return 1;
+  }
+#endif
 
   top->rst_n = 0;
   top->clk48 = 0; top->eval(); top->clk48 = 1; top->eval();
